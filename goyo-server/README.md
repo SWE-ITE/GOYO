@@ -4,6 +4,7 @@ docker-compose up
 ```
 
 ## System Architecture
+```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Client Application                      │
 │                     (React Web / Mobile App)                    │
@@ -29,3 +30,4 @@ docker-compose up
        PostgreSQL                             MQTT Broker
        (User/Device)                               ↓
                                                [Speaker]
+```
