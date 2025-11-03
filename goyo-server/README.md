@@ -3,6 +3,10 @@
 docker-compose up
 ```
 
+## Swagger UI
+backend - http://localhost:8000/docs#/
+AI - http://localhost:8001/docs#/
+
 ## System Architecture
 ```
 ┌─────────────────────────────────────────────────────────────────┐
