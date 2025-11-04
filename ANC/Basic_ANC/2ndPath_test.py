@@ -13,7 +13,7 @@ from typing import Optional
 
 import numpy as np
 
-from fxlms_controller import FxLMSANC
+from session_utils import create_controller
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -35,12 +35,12 @@ FIR_LENGTH = 64                # Number of taps to solve for
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    controller = FxLMSANC(
-        reference_path=str(REFERENCE_PATH),
-        control_device_index=CONTROL_DEVICE,
-        record_device_index=RECORD_DEVICE,
-        play_reference=False,
+    controller = create_controller(
+        reference_path=REFERENCE_PATH,
+        control_device=CONTROL_DEVICE,
+        record_device=RECORD_DEVICE,
         split_reference_channels=SPLIT_REFERENCE_CHANNELS,
+        play_reference=False,
     )
 
     try:

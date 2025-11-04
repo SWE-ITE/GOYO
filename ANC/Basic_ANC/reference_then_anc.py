@@ -8,14 +8,10 @@ Configuration below is hard-coded; adjust to match your setup and run:
 from __future__ import annotations
 
 import logging
-import time
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
-import pyaudio  # type: ignore
-
-from fxlms_controller import DEFAULT_BLOCK_SIZE, FxLMSANC, read_mono_wav
+from session_utils import create_controller, play_reference
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -38,80 +34,30 @@ ANC_DURATION: Optional[float] = None  # None = run until Ctrl+C after preview
 
 
 def play_reference_preview() -> None:
-    signal, sample_rate = read_mono_wav(str(REFERENCE_PATH))
-    block_len = BLOCK_SIZE if BLOCK_SIZE is not None else DEFAULT_BLOCK_SIZE
-
-    pa = pyaudio.PyAudio()
-    control_stream = pa.open(
-        format=pyaudio.paFloat32,
-        channels=2 if SPLIT_REFERENCE_CHANNELS else 1,
-        rate=sample_rate,
-        output=True,
-        frames_per_buffer=block_len,
-        output_device_index=CONTROL_DEVICE,
+    play_reference(
+        reference_path=REFERENCE_PATH,
+        control_device=CONTROL_DEVICE,
+        reference_device=REFERENCE_DEVICE,
+        split_reference_channels=SPLIT_REFERENCE_CHANNELS,
+        block_size=BLOCK_SIZE,
+        duration=REFERENCE_PREVIEW_SECONDS,
+        loop=True,
     )
-    reference_stream = None
-    if REFERENCE_DEVICE is not None:
-        reference_stream = pa.open(
-            format=pyaudio.paFloat32,
-            channels=1,
-            rate=sample_rate,
-            output=True,
-            frames_per_buffer=block_len,
-            output_device_index=REFERENCE_DEVICE,
-        )
-
-    index = 0
-    start_time = time.time()
-    try:
-        while time.time() - start_time < REFERENCE_PREVIEW_SECONDS:
-            block = signal[index : index + block_len]
-            if len(block) == 0:
-                index = 0
-                continue
-            if len(block) < block_len:
-                block = np.pad(block, (0, block_len - len(block))).astype(np.float32)
-
-            if SPLIT_REFERENCE_CHANNELS:
-                stereo = np.zeros(block_len * 2, dtype=np.float32)
-                stereo[0::2] = block
-                control_stream.write(stereo.tobytes())
-            else:
-                control_stream.write(block.astype(np.float32).tobytes())
-
-            if reference_stream is not None:
-                reference_stream.write(block.astype(np.float32).tobytes())
-
-            index += block_len
-            if index >= len(signal):
-                index = 0
-    finally:
-        control_stream.stop_stream()
-        control_stream.close()
-        if reference_stream:
-            reference_stream.stop_stream()
-            reference_stream.close()
-        pa.terminate()
 
 
 def run_anc() -> None:
-    taps = np.load(SECONDARY_PATH)
-    init_kwargs = {
-        "reference_path": str(REFERENCE_PATH),
-        "secondary_path": taps,
-        "control_device_index": CONTROL_DEVICE,
-        "record_device_index": RECORD_DEVICE,
-        "reference_device_index": REFERENCE_DEVICE,
-        "play_reference": True,
-        "step_size": STEP_SIZE,
-        "split_reference_channels": SPLIT_REFERENCE_CHANNELS,
-    }
-    if BLOCK_SIZE is not None:
-        init_kwargs["block_size"] = BLOCK_SIZE
-    if FILTER_LENGTH is not None:
-        init_kwargs["filter_length"] = FILTER_LENGTH
-
-    controller = FxLMSANC(**init_kwargs)
+    controller = create_controller(
+        reference_path=REFERENCE_PATH,
+        secondary_path_file=SECONDARY_PATH,
+        control_device=CONTROL_DEVICE,
+        record_device=RECORD_DEVICE,
+        reference_device=REFERENCE_DEVICE,
+        split_reference_channels=SPLIT_REFERENCE_CHANNELS,
+        play_reference=True,
+        step_size=STEP_SIZE,
+        block_size=BLOCK_SIZE,
+        filter_length=FILTER_LENGTH,
+    )
 
     def log_metrics(metrics) -> None:
         logging.info("frame=%05d error_rms=%.6f", metrics.frame_index, metrics.error_rms)
