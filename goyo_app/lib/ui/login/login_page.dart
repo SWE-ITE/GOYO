@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:goyo_app/ui/home/home_page.dart';
+import 'package:goyo_app/core/auth/token_manager.dart';
+import 'package:goyo_app/features/auth/auth_provider.dart';
+import 'package:goyo_app/data/services/api_service.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -9,40 +12,50 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final idCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final emailCtrl = TextEditingController();
   final pwCtrl = TextEditingController();
-  bool obscure = true;
   bool loading = false;
 
   @override
   void dispose() {
-    idCtrl.dispose();
+    emailCtrl.dispose();
     pwCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
+    print('[LOGIN] _submit start');
     if (loading) return;
+
+    final isValid = _formKey.currentState?.validate() ?? false;
+    print('[LOGIN] form valid? $isValid');
+    if (!isValid) return;
+
     setState(() => loading = true);
+    try {
+      final email = emailCtrl.text.trim();
+      final pw = pwCtrl.text;
 
-    final id = idCtrl.text.trim();
-    final pw = pwCtrl.text;
-
-    await Future.delayed(const Duration(milliseconds: 200)); // UX용 미세 딜레이
-
-    if (id == '1234' && pw == '1234') {
-      if (!mounted) return;
-       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomePage()),
+      print('[LOGIN] calling API…');
+      final result = await context.read<ApiService>().login(
+        email: email,
+        password: pw,
       );
-    } else {
+
+      await TokenManager.saveToken(result.access);
+      await context.read<AuthProvider>().setToken(result.access);
+
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('잘못된 ID/PW 입니다. (지금은 1234 / 1234)')),
-      );
+      print('[LOGIN] navigate /home');
+      Navigator.of(context).pushReplacementNamed('/home');
+    } catch (e) {
+      if (!mounted) return;
+      print('[LOGIN][ERR] $e');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
-
-    if (mounted) setState(() => loading = false);
   }
 
   @override
@@ -54,74 +67,99 @@ class _LoginPageState extends State<LoginPage> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // 로고
-                  CircleAvatar(
-                    radius: 36,
-                    backgroundColor: cs.primary.withOpacity(0.15),
-                    child: Icon(Icons.hearing, color: cs.primary, size: 36),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Welcome to ANC',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.w700, color: cs.onSurface),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // ID
-                  Text('ID', style: TextStyle(color: cs.onSurfaceVariant)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: idCtrl,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your email',
-                      prefixIcon: Icon(Icons.person_outline),
+            child: Form(
+              // ✅ 여기!
+              key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // 로고
+                    CircleAvatar(
+                      radius: 36,
+                      backgroundColor: cs.primary.withOpacity(0.15),
+                      child: Icon(Icons.hearing, color: cs.primary, size: 36),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // PW
-                  Text('Password', style: TextStyle(color: cs.onSurfaceVariant)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: pwCtrl,
-                    obscureText: obscure,
-                    onSubmitted: (_) => _submit(), // 엔터로 로그인
-                    decoration: InputDecoration(
-                      hintText: 'Enter your password',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(() => obscure = !obscure),
-                        icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Welcome to ANC',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                  // 로그인 버튼
-                  ElevatedButton(
-                    onPressed: loading ? null : _submit,
-                    child: loading
-                        ? const SizedBox(
-                            height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Sign in'),
-                  ),
-                  const SizedBox(height: 12),
+                    // ID
+                    Text('ID', style: TextStyle(color: cs.onSurfaceVariant)),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: emailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(labelText: 'Email'),
+                      validator: (v) {
+                        final s = (v ?? '').trim();
+                        if (s.isEmpty) return '이메일을 입력해 주세요';
+                        final ok = RegExp(
+                          r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                        ).hasMatch(s);
+                        return ok ? null : '올바른 이메일 형식이 아닙니다';
+                      },
+                    ),
+                    const SizedBox(height: 14),
 
-                  // 도움말
-                  Text(
-                    'Demo: ID 1234 / PW 1234',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: cs.onSurfaceVariant),
-                  ),
-                ],
+                    // PW
+                    Text(
+                      'Password',
+                      style: TextStyle(color: cs.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: pwCtrl,
+                      obscureText: true,
+                      decoration: const InputDecoration(labelText: 'Password'),
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? '비밀번호를 입력해 주세요' : null,
+                      onFieldSubmitted: (_) => _submit(),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 로그인 버튼
+                    ElevatedButton(
+                      onPressed: loading
+                          ? null
+                          : () {
+                              print('[LOGIN] button tapped');
+                              _submit();
+                            },
+                      child: loading
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Sign in'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: loading
+                          ? null
+                          : () => Navigator.of(context).pushNamed('/signup'),
+                      child: const Text('아직 계정이 없어요? 회원가입'),
+                    ),
+                    const SizedBox(height: 7),
+                    TextButton(
+                      onPressed: loading
+                          ? null
+                          : () => Navigator.of(context).pushNamed('/signup'),
+                      child: const Text('ID/PW 찾기'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

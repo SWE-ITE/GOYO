@@ -12,9 +12,24 @@ class _HomeTabState extends State<HomeTab> {
   bool ancOn = false;
 
   final List<NoiseRule> rules = [
-    NoiseRule(title: 'Low-frequency hum', icon: Icons.vibration, thresholdDb: 45, enabled: true),
-    NoiseRule(title: 'Fan noise',          icon: Icons.toys,      thresholdDb: 50, enabled: false),
-    NoiseRule(title: 'Impact noise',       icon: Icons.sensors,   thresholdDb: 60, enabled: true),
+    NoiseRule(
+      title: 'Low-frequency hum',
+      icon: Icons.vibration,
+      thresholdDb: 45,
+      enabled: true,
+    ),
+    NoiseRule(
+      title: 'Fan noise',
+      icon: Icons.toys,
+      thresholdDb: 50,
+      enabled: false,
+    ),
+    NoiseRule(
+      title: 'Impact noise',
+      icon: Icons.sensors,
+      thresholdDb: 60,
+      enabled: true,
+    ),
   ];
 
   @override
@@ -40,15 +55,25 @@ class _HomeTabState extends State<HomeTab> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Active Noise Control',
-                          style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface)),
+                      Text(
+                        'Active Noise Control',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(ancOn ? 'ANC is ON' : 'ANC is OFF',
-                          style: TextStyle(color: cs.onSurfaceVariant)),
+                      Text(
+                        ancOn ? 'ANC is ON' : 'ANC is OFF',
+                        style: TextStyle(color: cs.onSurfaceVariant),
+                      ),
                     ],
                   ),
                 ),
-                Switch(value: ancOn, onChanged: (v) => setState(() => ancOn = v)),
+                Switch(
+                  value: ancOn,
+                  onChanged: (v) => setState(() => ancOn = v),
+                ),
               ],
             ),
           ),
@@ -59,30 +84,28 @@ class _HomeTabState extends State<HomeTab> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Noise Rules',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: cs.onSurface)),
-            TextButton.icon(
-              onPressed: _addRule,
-              icon: const Icon(Icons.add),
-              label: const Text('Add'),
+            Text(
+              'Noise List',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: cs.onSurface,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 8),
 
-        ...rules.map((r) => _NoiseRuleTile(
-              rule: r,
-              onToggle: (e) => setState(() => r.enabled = e),
-              onEdit: () => _editRule(r),
-              onDelete: () => setState(() => rules.remove(r)),
-            )),
+        ...rules.map(
+          (r) => _NoiseRuleTile(
+            rule: r,
+            onToggle: (e) => setState(() => r.enabled = e),
+            onEdit: () => _editRule(r),
+            onDelete: () => setState(() => rules.remove(r)),
+          ),
+        ),
       ],
     );
-  }
-
-  void _addRule() {
-    setState(() => rules.add(
-        NoiseRule(title: 'New rule', icon: Icons.equalizer, thresholdDb: 55, enabled: false)));
   }
 
   void _editRule(NoiseRule r) async {
@@ -97,8 +120,14 @@ class _HomeTabState extends State<HomeTab> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Edit "${r.title}"',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: cs.onSurface)),
+            Text(
+              'Edit "${r.title}"',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: cs.onSurface,
+              ),
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
@@ -152,8 +181,14 @@ class _NoiseRuleTile extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(onPressed: onEdit, icon: const Icon(Icons.edit_outlined)),
-            IconButton(onPressed: onDelete, icon: const Icon(Icons.delete_outline)),
+            IconButton(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined),
+            ),
+            IconButton(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline),
+            ),
             Switch(value: rule.enabled, onChanged: onToggle),
           ],
         ),

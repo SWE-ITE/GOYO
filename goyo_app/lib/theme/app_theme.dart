@@ -5,7 +5,10 @@ class AppTheme {
   static const seed = Color(0xFF8FD6B5);
 
   static ThemeData light([Color seedColor = seed]) {
-    final scheme = ColorScheme.fromSeed(seedColor: seedColor, brightness: Brightness.light);
+    final scheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: Brightness.light,
+    );
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
@@ -30,7 +33,9 @@ class AppTheme {
           backgroundColor: scheme.primary,
           foregroundColor: scheme.onPrimary,
           minimumSize: const Size.fromHeight(48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -44,7 +49,10 @@ class AppTheme {
   }
 
   static ThemeData dark([Color seedColor = seed]) {
-    final scheme = ColorScheme.fromSeed(seedColor: seedColor, brightness: Brightness.dark);
+    final scheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: Brightness.dark,
+    );
     return light(seedColor).copyWith(colorScheme: scheme);
   }
 }

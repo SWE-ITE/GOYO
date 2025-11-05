@@ -50,7 +50,10 @@ class _DeviceManagerTabState extends State<DeviceManager> {
                 onPressed: scanning ? null : _scanDevices,
                 icon: scanning
                     ? const SizedBox(
-                        height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Icon(Icons.refresh),
                 label: Text(scanning ? 'Scanning...' : 'Scan devices'),
               ),
@@ -66,24 +69,32 @@ class _DeviceManagerTabState extends State<DeviceManager> {
         const SizedBox(height: 16),
 
         // 디바이스 리스트
-        ...devices.map((d) => _DeviceTile(
-              device: d,
-              onToggleConnection: () => _toggleConnection(d),
-              onTest: () => _testDevice(d),
-              onCalibrate: () => _calibrateLatency(d),
-              onDelete: () => _deleteDevice(d),
-              onRename: () => _renameDevice(d),
-            )),
+        ...devices.map(
+          (d) => _DeviceTile(
+            device: d,
+            onToggleConnection: () => _toggleConnection(d),
+            onTest: () => _testDevice(d),
+            onCalibrate: () => _calibrateLatency(d),
+            onDelete: () => _deleteDevice(d),
+            onRename: () => _renameDevice(d),
+          ),
+        ),
         if (devices.isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 40),
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.speaker_notes_off, color: cs.onSurfaceVariant, size: 40),
+                  Icon(
+                    Icons.speaker_notes_off,
+                    color: cs.onSurfaceVariant,
+                    size: 40,
+                  ),
                   const SizedBox(height: 8),
-                  Text('No devices found',
-                      style: TextStyle(color: cs.onSurfaceVariant)),
+                  Text(
+                    'No devices found',
+                    style: TextStyle(color: cs.onSurfaceVariant),
+                  ),
                 ],
               ),
             ),
@@ -97,9 +108,9 @@ class _DeviceManagerTabState extends State<DeviceManager> {
     await Future.delayed(const Duration(seconds: 1));
     if (!mounted) return;
     setState(() => scanning = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Scan complete (demo)')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Scan complete (demo)')));
   }
 
   void _toggleConnection(AudioDevice d) {
@@ -116,12 +127,19 @@ class _DeviceManagerTabState extends State<DeviceManager> {
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Test ${d.kind == DeviceKind.mic ? "microphone" : "speaker"}'),
-        content: Text(d.kind == DeviceKind.mic
-            ? '🎙️ Listening for input... (demo)'
-            : '🔊 Playing test tone... (demo)'),
+        title: Text(
+          'Test ${d.kind == DeviceKind.mic ? "microphone" : "speaker"}',
+        ),
+        content: Text(
+          d.kind == DeviceKind.mic
+              ? '🎙️ Listening for input... (demo)'
+              : '🔊 Playing test tone... (demo)',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
@@ -130,7 +148,9 @@ class _DeviceManagerTabState extends State<DeviceManager> {
   Future<void> _calibrateLatency(AudioDevice d) async {
     if (d.kind == DeviceKind.mic) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select a speaker to ping for latency (demo)')),
+        const SnackBar(
+          content: Text('Select a speaker to ping for latency (demo)'),
+        ),
       );
       return;
     }
@@ -152,13 +172,20 @@ class _DeviceManagerTabState extends State<DeviceManager> {
                   children: [
                     Icon(Icons.speed, color: cs.primary),
                     const SizedBox(width: 8),
-                    Text('Latency calibration',
-                        style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface)),
+                    Text(
+                      'Latency calibration',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text('Estimated latency: $latency ms',
-                    style: TextStyle(color: cs.onSurfaceVariant)),
+                Text(
+                  'Estimated latency: $latency ms',
+                  style: TextStyle(color: cs.onSurfaceVariant),
+                ),
                 const SizedBox(height: 8),
                 FilledButton.icon(
                   onPressed: () async {
@@ -176,7 +203,9 @@ class _DeviceManagerTabState extends State<DeviceManager> {
                     setState(() => d.latencyMs = latency);
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Saved latency: ${d.latencyMs} ms')),
+                      SnackBar(
+                        content: Text('Saved latency: ${d.latencyMs} ms'),
+                      ),
                     );
                   },
                   child: const Text('Save'),
@@ -200,13 +229,14 @@ class _DeviceManagerTabState extends State<DeviceManager> {
       isScrollControlled: true,
       builder: (_) => Padding(
         padding: EdgeInsets.only(
-          left: 16, right: 16,
-          top: 8, bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
+          left: 16,
+          right: 16,
+          top: 8,
+          bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-        
             const SizedBox(height: 12),
             TextField(
               controller: nameCtrl,
@@ -224,8 +254,14 @@ class _DeviceManagerTabState extends State<DeviceManager> {
                     value: kind,
                     decoration: const InputDecoration(labelText: 'Kind'),
                     items: const [
-                      DropdownMenuItem(value: DeviceKind.mic, child: Text('Microphone')),
-                      DropdownMenuItem(value: DeviceKind.spk, child: Text('Speaker')),
+                      DropdownMenuItem(
+                        value: DeviceKind.mic,
+                        child: Text('Microphone'),
+                      ),
+                      DropdownMenuItem(
+                        value: DeviceKind.spk,
+                        child: Text('Speaker'),
+                      ),
                     ],
                     onChanged: (v) => kind = v ?? DeviceKind.mic,
                   ),
@@ -236,8 +272,14 @@ class _DeviceManagerTabState extends State<DeviceManager> {
                     value: transport,
                     decoration: const InputDecoration(labelText: 'Transport'),
                     items: const [
-                      DropdownMenuItem(value: Transport.wifi, child: Text('Wi-Fi')),
-                      DropdownMenuItem(value: Transport.ble, child: Text('BLE')),
+                      DropdownMenuItem(
+                        value: Transport.wifi,
+                        child: Text('Wi-Fi'),
+                      ),
+                      DropdownMenuItem(
+                        value: Transport.ble,
+                        child: Text('BLE'),
+                      ),
                     ],
                     onChanged: (v) => transport = v ?? Transport.wifi,
                   ),
@@ -247,16 +289,20 @@ class _DeviceManagerTabState extends State<DeviceManager> {
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: () {
-                final name = nameCtrl.text.trim().isEmpty ? 'New Device' : nameCtrl.text.trim();
+                final name = nameCtrl.text.trim().isEmpty
+                    ? 'New Device'
+                    : nameCtrl.text.trim();
                 setState(() {
-                  devices.add(AudioDevice(
-                    id: 'dev-${DateTime.now().millisecondsSinceEpoch}',
-                    name: name,
-                    kind: kind,
-                    transport: transport,
-                    status: DeviceStatus.disconnected,
-                    latencyMs: null,
-                  ));
+                  devices.add(
+                    AudioDevice(
+                      id: 'dev-${DateTime.now().millisecondsSinceEpoch}',
+                      name: name,
+                      kind: kind,
+                      transport: transport,
+                      status: DeviceStatus.disconnected,
+                      latencyMs: null,
+                    ),
+                  );
                 });
                 Navigator.pop(context);
               },
@@ -271,9 +317,9 @@ class _DeviceManagerTabState extends State<DeviceManager> {
 
   void _deleteDevice(AudioDevice d) {
     setState(() => devices.remove(d));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Deleted "${d.name}"')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Deleted "${d.name}"')));
   }
 
   Future<void> _renameDevice(AudioDevice d) async {
@@ -284,13 +330,22 @@ class _DeviceManagerTabState extends State<DeviceManager> {
         title: const Text('Rename device'),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(prefixIcon: Icon(Icons.edit_outlined)),
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.edit_outlined),
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () {
-              setState(() => d.name = ctrl.text.trim().isEmpty ? d.name : ctrl.text.trim());
+              setState(
+                () => d.name = ctrl.text.trim().isEmpty
+                    ? d.name
+                    : ctrl.text.trim(),
+              );
               Navigator.pop(context);
             },
             child: const Text('Save'),
@@ -330,51 +385,85 @@ class _DeviceTile extends StatelessWidget {
           leading: CircleAvatar(
             backgroundColor: cs.primary.withOpacity(.12),
             child: Icon(
-              device.kind == DeviceKind.mic ? Icons.mic : Icons.speaker_outlined,
+              device.kind == DeviceKind.mic
+                  ? Icons.mic
+                  : Icons.speaker_outlined,
               color: cs.primary,
             ),
           ),
-          title: Text(device.name),
+          title: Text(
+            device.name,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+          ),
           subtitle: Wrap(
             spacing: 8,
-            runSpacing: -8,
+            runSpacing: 0,
             children: [
-              _Chip(text: _statusText(device.status), color: _statusColor(cs, device.status)),
-              _Chip(text: device.transport.name.toUpperCase(), color: cs.secondaryContainer),
-              if (device.latencyMs != null) _Chip(text: '${device.latencyMs} ms', color: cs.tertiaryContainer),
+              _Chip(
+                text: _statusText(device.status),
+                color: _statusColor(cs, device.status),
+              ),
+              _Chip(
+                text: device.transport.name.toUpperCase(),
+                color: cs.secondaryContainer,
+              ),
+              if (device.latencyMs != null)
+                _Chip(
+                  text: '${device.latencyMs} ms',
+                  color: cs.tertiaryContainer,
+                ),
             ],
           ),
-          trailing: Wrap(
-            spacing: 0,
-            children: [
-              IconButton(
-                tooltip: 'Rename',
-                onPressed: onRename,
-                icon: const Icon(Icons.edit_outlined),
-              ),
-              IconButton(
-                tooltip: device.status == DeviceStatus.disconnected ? 'Connect' : 'Disconnect',
-                onPressed: onToggleConnection,
-                icon: Icon(device.status == DeviceStatus.disconnected
-                    ? Icons.link
-                    : Icons.link_off),
-              ),
-              IconButton(
-                tooltip: device.kind == DeviceKind.mic ? 'Input test' : 'Output test',
-                onPressed: onTest,
-                icon: Icon(device.kind == DeviceKind.mic ? Icons.mic_none : Icons.volume_up_outlined),
-              ),
-              IconButton(
-                tooltip: 'Calibrate latency',
-                onPressed: onCalibrate,
-                icon: const Icon(Icons.speed),
-              ),
-              IconButton(
-                tooltip: 'Delete',
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline),
-              ),
-            ],
+          trailing: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.46, // ~화면 절반 정도
+              // 혹은 const BoxConstraints(maxWidth: 180);
+            ),
+            child: Wrap(
+              spacing: 0,
+              runSpacing: 0,
+              alignment: WrapAlignment.end,
+              children: [
+                IconButton(
+                  tooltip: 'Rename',
+                  onPressed: onRename,
+                  icon: const Icon(Icons.edit_outlined),
+                ),
+                IconButton(
+                  tooltip: device.status == DeviceStatus.disconnected
+                      ? 'Connect'
+                      : 'Disconnect',
+                  onPressed: onToggleConnection,
+                  icon: Icon(
+                    device.status == DeviceStatus.disconnected
+                        ? Icons.link
+                        : Icons.link_off,
+                  ),
+                ),
+                IconButton(
+                  tooltip: device.kind == DeviceKind.mic
+                      ? 'Input test'
+                      : 'Output test',
+                  onPressed: onTest,
+                  icon: Icon(
+                    device.kind == DeviceKind.mic
+                        ? Icons.mic_none
+                        : Icons.volume_up_outlined,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Calibrate latency',
+                  onPressed: onCalibrate,
+                  icon: const Icon(Icons.speed),
+                ),
+                IconButton(
+                  tooltip: 'Delete',
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete_outline),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -428,7 +517,9 @@ class _Chip extends StatelessWidget {
 
 /// ---- 모델/타입 (UI 더미) ----
 enum DeviceKind { mic, spk }
+
 enum Transport { wifi, ble }
+
 enum DeviceStatus { disconnected, connected, active }
 
 class AudioDevice {
