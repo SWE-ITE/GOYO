@@ -1,7 +1,0 @@
-### update 2nd path
-
-controller = FxLMSANC("ref.wav", step_size=5e-4, filter_length=128, block_size=256)
-s_hat = controller.measure_secondary_path(duration=2.0, excitation_level=0.2, fir_length=64)
-
-### ANC
-controller.run(loop_reference=True, metrics_callback=log_metrics)

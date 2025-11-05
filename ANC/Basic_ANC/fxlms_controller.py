@@ -95,6 +95,10 @@ class FxLMSANC:
         Provide this when you need to feed the original noise into a separate
         loudspeaker. If omitted and ``play_reference`` is True, the reference
         signal is mixed into the control speaker instead (legacy behaviour).
+    split_reference_channels:
+        When True, the control output is stereo with the reference on the left
+        channel and the anti-noise on the right channel. Use this to drive both
+        signals from a single physical speaker interface.
     play_reference:
         If True, the primary noise is audible. Either written to the dedicated
         reference speaker (when ``reference_device_index`` is set) or mixed into
@@ -115,6 +119,7 @@ class FxLMSANC:
         control_device_index: Optional[int] = None,
         record_device_index: Optional[int] = None,
         reference_device_index: Optional[int] = None,
+        split_reference_channels: bool = False,
         play_reference: bool = False,
         normalize_step: bool = True,
     ):
@@ -132,6 +137,7 @@ class FxLMSANC:
         self.base_step_size = step_size
         self.normalize_step = normalize_step
         self.play_reference = play_reference
+        self.split_reference_channels = split_reference_channels
 
         if secondary_path is None:
             # Use a single-sample delta if no model is provided.
@@ -146,6 +152,11 @@ class FxLMSANC:
         self.control_device_index = control_device_index
         self.record_device_index = record_device_index
         self.reference_device_index = reference_device_index
+
+        if self.split_reference_channels and self.reference_device_index is not None:
+            raise ValueError(
+                "Cannot set reference_device_index when split_reference_channels is True."
+            )
 
         self._audio = pyaudio.PyAudio()
         self._control_stream = None
@@ -173,14 +184,19 @@ class FxLMSANC:
         if self._control_stream is None:
             self._control_stream = self._audio.open(
                 format=pyaudio.paFloat32,
-                channels=1,
+                channels=2 if self.split_reference_channels else 1,
                 rate=self.sample_rate,
                 output=True,
                 frames_per_buffer=self.block_size,
                 output_device_index=self.control_device_index,
             )
 
-        if self.play_reference and self.reference_device_index is not None and self._reference_stream is None:
+        if (
+            self.play_reference
+            and self.reference_device_index is not None
+            and not self.split_reference_channels
+            and self._reference_stream is None
+        ):
             self._reference_stream = self._audio.open(
                 format=pyaudio.paFloat32,
                 channels=1,
@@ -289,7 +305,14 @@ class FxLMSANC:
 
                 anti_noise_block, fx_vectors = self._synthesize_block(ref_block)
 
-                if self.play_reference and self.reference_device_index is not None and self._reference_stream:
+                if self.split_reference_channels:
+                    left = ref_block if self.play_reference else np.zeros_like(ref_block)
+                    right = anti_noise_block
+                    stereo = np.empty(self.block_size * 2, dtype=np.float32)
+                    stereo[0::2] = np.clip(left, -1.0, 1.0)
+                    stereo[1::2] = np.clip(right, -1.0, 1.0)
+                    self._control_stream.write(stereo.tobytes())
+                elif self.play_reference and self.reference_device_index is not None and self._reference_stream:
                     self._reference_stream.write(ref_block.astype(np.float32).tobytes())
                     output_block = anti_noise_block
                 elif self.play_reference:
@@ -297,7 +320,8 @@ class FxLMSANC:
                 else:
                     output_block = np.clip(anti_noise_block, -1.0, 1.0)
 
-                self._control_stream.write(output_block.astype(np.float32).tobytes())
+                if not self.split_reference_channels:
+                    self._control_stream.write(output_block.astype(np.float32).tobytes())
 
                 error_raw = self._input_stream.read(
                     self.block_size, exception_on_overflow=False
@@ -399,7 +423,12 @@ class FxLMSANC:
             if len(block) < self.block_size:
                 block = np.pad(block, (0, self.block_size - len(block)))
 
-            self._control_stream.write(block.astype(np.float32).tobytes())
+            if self.split_reference_channels:
+                stereo_block = np.zeros(self.block_size * 2, dtype=np.float32)
+                stereo_block[1::2] = block.astype(np.float32)
+                self._control_stream.write(stereo_block.tobytes())
+            else:
+                self._control_stream.write(block.astype(np.float32).tobytes())
             raw = self._input_stream.read(
                 self.block_size, exception_on_overflow=False
             )
@@ -467,6 +496,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Input device index for error microphone",
     )
     parser.add_argument(
+        "--split-reference-channels",
+        action="store_true",
+        help="Send reference (left) and anti-noise (right) over the control output stereo pair",
+    )
+    parser.add_argument(
         "--duration",
         type=float,
         default=None,
@@ -490,6 +524,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         control_device_index=args.control_device,
         record_device_index=args.record_device,
         reference_device_index=args.reference_device,
+        split_reference_channels=args.split_reference_channels,
     )
 
     def log_metrics(metrics: AncMetrics) -> None:
