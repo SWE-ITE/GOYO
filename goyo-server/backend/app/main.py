@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, devices, profile  # profile 추가
+from app.api import auth, devices, profile, audio
 from app.database import engine, Base
 
 # Create tables
@@ -9,7 +9,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="GOYO Backend API",
     description="AI-Based Active Noise Control System",
-    version="2.0.0"
+    version="3.0.0"
 )
 
 # CORS
@@ -24,7 +24,8 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router)
 app.include_router(devices.router)
-app.include_router(profile.router)  # 추가
+app.include_router(profile.router)
+app.include_router(audio.router, prefix="/api/audio", tags=["audio"])
 
 @app.get("/")
 def root():

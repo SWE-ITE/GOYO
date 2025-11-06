@@ -1,8 +1,8 @@
 """
 Audio Control API
-ANC 제어 및 모니터링 (오디오 스트리밍은 AI Server에서 직접 처리)
+USB 마이크에서 오디오 캡처하고 Redis Pub/Sub으로 AI 서버에 전송
 """
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException
 from sqlalchemy.orm import Session
 import asyncio
 import logging
@@ -13,6 +13,7 @@ from app.utils.dependencies import get_current_user
 from app.utils.redis_client import get_redis_client
 from app.models.user import User
 from app.models.device import Device
+from app.services.audio_streaming_service import audio_streaming_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -24,42 +25,79 @@ async def start_audio_stream(
     db: Session = Depends(get_db)
 ):
     """
-    ANC 시작 명령
-    - 클라이언트는 이 API 호출 후 AI Server에 직접 WebSocket 연결
+    ANC 시작: USB 마이크에서 오디오 캡처 시작
+    Backend가 PyAudio로 마이크 입력을 받아 Redis Pub/Sub으로 AI 서버에 전송
     """
+    user_id = str(current_user.id)
+
+    # 이미 스트리밍 중인지 확인
+    if audio_streaming_service.is_streaming(user_id):
+        return {
+            "success": False,
+            "error": "Audio streaming already active for this user"
+        }
+
     # 디바이스 구성 확인
     devices = db.query(Device).filter(Device.user_id == current_user.id).all()
-    
+
     source_device = next((d for d in devices if d.device_type == "microphone_source"), None)
     reference_device = next((d for d in devices if d.device_type == "microphone_reference"), None)
     speaker = next((d for d in devices if d.device_type == "speaker"), None)
-    
+
     if not all([source_device, reference_device, speaker]):
-        return {
-            "success": False,
-            "error": "Device setup incomplete"
-        }
-    
-    # Redis에 ANC 시작 명령 전송 (AI Server가 수신)
+        raise HTTPException(
+            status_code=400,
+            detail="Device setup incomplete. Please pair source mic, reference mic, and speaker."
+        )
+
+    # Device ID에서 PyAudio 인덱스 추출
+    # 예: "USB_MIC_0" -> 0
+    try:
+        source_index = int(source_device.device_id.split("_")[-1])
+        reference_index = int(reference_device.device_id.split("_")[-1])
+    except (ValueError, IndexError):
+        raise HTTPException(
+            status_code=500,
+            detail="Invalid device ID format"
+        )
+
+    # 오디오 스트리밍 시작 (백그라운드 스레드)
+    try:
+        audio_streaming_service.start_streaming(
+            user_id=user_id,
+            source_device_index=source_index,
+            reference_device_index=reference_index
+        )
+    except Exception as e:
+        logger.error(f"Failed to start audio streaming: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to start audio streaming: {str(e)}"
+        )
+
+    # Redis에 ANC 시작 명령 전송 (AI Server에 알림)
     redis_client = await get_redis_client()
     await redis_client.publish(
         "anc:control",
         json.dumps({
-            "user_id": str(current_user.id),
+            "user_id": user_id,
             "command": "start",
             "params": {
                 "suppression_level": current_user.anc_suppression_level
             }
         })
     )
-    
+
+    logger.info(f"✅ ANC started for user {user_id}")
+
     return {
         "success": True,
-        "message": "ANC started. Connect to AI Server WebSocket.",
-        "ai_server_url": f"ws://localhost:8001/ws/audio/{current_user.id}",
+        "message": "Audio streaming started",
         "source_device": source_device.device_name,
         "reference_device": reference_device.device_name,
-        "speaker": speaker.device_name
+        "speaker": speaker.device_name,
+        "source_device_index": source_index,
+        "reference_device_index": reference_index
     }
 
 
@@ -67,21 +105,41 @@ async def start_audio_stream(
 async def stop_audio_stream(
     current_user: User = Depends(get_current_user)
 ):
-    """ANC 중지 명령"""
-    
-    # Redis에 ANC 중지 명령 전송
+    """ANC 중지: USB 마이크 오디오 캡처 중지"""
+    user_id = str(current_user.id)
+
+    # 스트리밍 중인지 확인
+    if not audio_streaming_service.is_streaming(user_id):
+        return {
+            "success": False,
+            "error": "No active audio streaming for this user"
+        }
+
+    # 오디오 스트리밍 중지
+    try:
+        audio_streaming_service.stop_streaming(user_id)
+    except Exception as e:
+        logger.error(f"Failed to stop audio streaming: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to stop audio streaming: {str(e)}"
+        )
+
+    # Redis에 ANC 중지 명령 전송 (AI Server에 알림)
     redis_client = await get_redis_client()
     await redis_client.publish(
         "anc:control",
         json.dumps({
-            "user_id": str(current_user.id),
+            "user_id": user_id,
             "command": "stop"
         })
     )
-    
+
+    logger.info(f"✅ ANC stopped for user {user_id}")
+
     return {
         "success": True,
-        "message": "ANC stopped"
+        "message": "Audio streaming stopped"
     }
 
 
