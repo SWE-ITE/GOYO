@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:goyo_app/data/services/api_service.dart';
+import 'package:goyo_app/features/anc/anc_store.dart';
 import 'package:goyo_app/features/auth/auth_provider.dart';
 import 'package:goyo_app/ui/home/home_page.dart';
 import 'package:goyo_app/ui/login/login_page.dart';
@@ -31,6 +32,15 @@ class GoyoApp extends StatelessWidget {
         // AuthProvider: ApiService를 주입받음
         ChangeNotifierProvider<AuthProvider>(
           create: (ctx) => AuthProvider(ctx.read<ApiService>())..bootstrap(),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, AncStore>(
+          create: (_) => AncStore(initialUserName: 'User'),
+          update: (_, auth, store) {
+            // auth.me?.name 이 바뀌면 AncStore에 반영
+            store ??= AncStore(initialUserName: 'User');
+            store.setUserName(auth.me?.name);
+            return store;
+          },
         ),
       ],
       child: MaterialApp(

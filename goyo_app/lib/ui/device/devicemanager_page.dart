@@ -417,7 +417,7 @@ class _DeviceTile extends StatelessWidget {
           ),
           trailing: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.46, // ~화면 절반 정도
+              maxWidth: MediaQuery.of(context).size.width * 0.3, // ~화면 절반 정도
               // 혹은 const BoxConstraints(maxWidth: 180);
             ),
             child: Wrap(
@@ -451,11 +451,6 @@ class _DeviceTile extends StatelessWidget {
                         ? Icons.mic_none
                         : Icons.volume_up_outlined,
                   ),
-                ),
-                IconButton(
-                  tooltip: 'Calibrate latency',
-                  onPressed: onCalibrate,
-                  icon: const Icon(Icons.speed),
                 ),
                 IconButton(
                   tooltip: 'Delete',

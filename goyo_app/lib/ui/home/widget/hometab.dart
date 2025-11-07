@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:goyo_app/features/anc/anc_store.dart';
+import 'package:provider/provider.dart';
 
 /// 홈 탭: ANC 토글 + 내가 규정한 소음 리스트
 class HomeTab extends StatefulWidget {
@@ -29,6 +31,8 @@ class _HomeTabState extends State<HomeTab> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final anc = context.watch<AncStore>();
+    final isFocus = anc.mode == AncMode.focus;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -86,13 +90,34 @@ class _HomeTabState extends State<HomeTab> {
                 color: cs.onSurface,
               ),
             ),
+            if (isFocus) ...[
+              const SizedBox(width: 8),
+              const Icon(Icons.lock, size: 16, color: Colors.red),
+              const SizedBox(width: 4),
+              const Text(
+                'FOCUS MODE',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ],
         ),
+        if (isFocus)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 6),
+            child: Text(
+              'Focus Mode: all rules ON & 100% — editing disabled.',
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+            ),
+          ),
         const SizedBox(height: 8),
 
         ...rules.map(
           (r) => _NoiseRuleTile(
             rule: r,
+            locked: isFocus,
             onToggle: (e) => setState(() => r.enabled = e),
             onEdit: () => _editRule(r),
             onDelete: () => setState(() => rules.remove(r)),
@@ -153,6 +178,7 @@ class _HomeTabState extends State<HomeTab> {
 
 class _NoiseRuleTile extends StatefulWidget {
   final NoiseRule rule;
+  final bool locked;
   final ValueChanged<bool> onToggle;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -166,6 +192,7 @@ class _NoiseRuleTile extends StatefulWidget {
     required this.onEdit,
     required this.onDelete,
     this.onIntensityChanged,
+    this.locked = false,
   });
 
   @override
@@ -184,6 +211,7 @@ class _NoiseRuleTileState extends State<_NoiseRuleTile> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final disabled = widget.locked;
 
     return Card(
       child: Padding(
@@ -215,7 +243,10 @@ class _NoiseRuleTileState extends State<_NoiseRuleTile> {
                   icon: const Icon(Icons.delete_outline),
                   tooltip: 'Delete rule',
                 ),
-                Switch(value: widget.rule.enabled, onChanged: widget.onToggle),
+                Switch(
+                  value: widget.rule.enabled,
+                  onChanged: disabled ? null : widget.onToggle,
+                ),
               ],
             ),
 
@@ -245,12 +276,16 @@ class _NoiseRuleTileState extends State<_NoiseRuleTile> {
               min: 0,
               max: 100,
               divisions: 20,
-              onChanged: (v) => setState(() => _intensity = v.round()),
-              onChangeEnd: (v) {
-                final val = v.round().clamp(0, 100);
-                widget.rule.controllNoise = val;
-                widget.onIntensityChanged?.call(val);
-              },
+              onChanged: disabled
+                  ? null
+                  : (v) => setState(() => _intensity = v.round()),
+              onChangeEnd: disabled
+                  ? null
+                  : (v) {
+                      final val = v.round();
+                      widget.rule.controllNoise = val;
+                      widget.onIntensityChanged?.call(val);
+                    },
             ),
           ],
         ),

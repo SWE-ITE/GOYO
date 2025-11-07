@@ -2,6 +2,7 @@
 import 'package:dio/dio.dart';
 import 'package:goyo_app/core/config/env.dart';
 import 'package:goyo_app/core/auth/token_manager.dart';
+import 'package:goyo_app/features/auth/auth_provider.dart';
 
 class ApiService {
   ApiService({Dio? dio})
@@ -115,5 +116,16 @@ extension AuthApi on ApiService {
           : e.message ?? 'Sign up failed';
       throw Exception('Sign up failed ($code): $msg');
     }
+  }
+}
+
+extension ProfileApi on ApiService {
+  Future<UserProfile> getMe() async {
+    final res = await _dio.get('/api/profile'); // 서버 스펙에 맞춰 수정
+    return UserProfile.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> updateProfile({required String name}) async {
+    await _dio.put('/api/profile', data: {'name': name});
   }
 }

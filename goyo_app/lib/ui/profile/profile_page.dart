@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:goyo_app/features/anc/anc_store.dart';
 
-/// Profile: 사용자 이름 + 선호 모드(Study/Sleep/Focus) + 모드별 ANC 프리셋(UI 더미)
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -9,19 +10,15 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final nameCtrl = TextEditingController(text: 'Lee Wongyu');
-
-  // 현재 선택된 모드
-  String currentMode = 'focus'; // 'study' | 'sleep' | 'focus'
-
-  // 모드별 ANC 프리셋(더미 데이터): intensity(0~1), auto(true/false)
-  final Map<String, AncPreset> presets = {
-    'study': AncPreset(intensity: 0.6, auto: true),
-    'sleep': AncPreset(intensity: 0.4, auto: true),
-    'focus': AncPreset(intensity: 0.8, auto: false),
-  };
-
+  final nameCtrl = TextEditingController();
   bool saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final store = context.read<AncStore>();
+    nameCtrl.text = store.userName;
+  }
 
   @override
   void dispose() {
@@ -32,14 +29,15 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final preset = presets[currentMode]!;
+    final anc = context.watch<AncStore>();
+    final current = anc.mode;
 
     return Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // ── 사용자 카드 ───────────────────────────────────────────────
+            // ── User info ─────────────────────────────────────────────
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -67,7 +65,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 16),
 
-            // ── 선호 모드 선택 (SegmentedButton) ────────────────────────
+            // ── Sound mode (Normal / Focus) ──────────────────────────
             Text(
               'Preferred sound mode',
               style: TextStyle(
@@ -76,30 +74,39 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 8),
-            SegmentedButton<String>(
+            SegmentedButton<AncMode>(
               segments: const [
                 ButtonSegment(
-                  value: 'study',
-                  label: Text('Study'),
-                  icon: Icon(Icons.menu_book_outlined),
+                  value: AncMode.normal,
+                  label: Text('Normal'),
+                  icon: Icon(Icons.hearing_disabled),
                 ),
                 ButtonSegment(
-                  value: 'sleep',
-                  label: Text('Sleep'),
-                  icon: Icon(Icons.nightlight_outlined),
-                ),
-                ButtonSegment(
-                  value: 'focus',
+                  value: AncMode.focus,
                   label: Text('Focus'),
-                  icon: Icon(Icons.center_focus_weak),
+                  icon: Icon(Icons.center_focus_strong),
                 ),
               ],
-              selected: {currentMode},
-              onSelectionChanged: (s) => setState(() => currentMode = s.first),
+              selected: {current},
+              onSelectionChanged: (s) {
+                final selected = s.first;
+                anc.setMode(selected);
+
+                // UX 피드백: 무엇이 바뀌었는지 명확히
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      selected == AncMode.focus
+                          ? 'Focus Mode: 모든 소음 규칙 ON + 강도 최대로 전환됐어요.'
+                          : 'Normal Mode: 사용자 개별 토글 상태를 적용했어요.',
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 16),
 
-            // ── 현재 모드의 ANC 프리셋 ──────────────────────────────────
+            // ── ANC preset for current mode ──────────────────────────
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -111,7 +118,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         Icon(Icons.hearing, color: cs.primary),
                         const SizedBox(width: 8),
                         Text(
-                          'ANC preset for "${currentMode.toUpperCase()}"',
+                          'ANC preset for "${anc.mode.name.toUpperCase()}"',
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             color: cs.onSurface,
@@ -122,10 +129,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 12),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      value: preset.auto,
-                      onChanged: (v) => setState(
-                        () => presets[currentMode] = preset.copyWith(auto: v),
-                      ),
+                      value: anc.auto,
+                      onChanged: (v) => context.read<AncStore>().setAuto(v),
                       title: const Text('Automatic mode'),
                       subtitle: const Text(
                         'Adjust suppression based on ambient noise',
@@ -136,16 +141,20 @@ class _ProfilePageState extends State<ProfilePage> {
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Suppression intensity'),
                       subtitle: Slider(
-                        value: preset.intensity,
-                        onChanged: (v) => setState(
-                          () => presets[currentMode] = preset.copyWith(
-                            intensity: v,
-                          ),
-                        ),
+                        value: anc.intensity,
+                        onChanged: (v) =>
+                            context.read<AncStore>().setIntensity(v),
                         min: 0.0,
                         max: 1.0,
                       ),
-                      trailing: Text('${(preset.intensity * 100).round()}%'),
+                      trailing: Text('${(anc.intensity * 100).round()}%'),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      anc.mode == AncMode.focus
+                          ? '※ 집중모드에서는 홈의 모든 노이즈 규칙이 자동으로 ON이며 강도도 최대입니다.'
+                          : '※ 일반모드에서는 사용자가 켠 규칙만 적용됩니다.',
+                      style: TextStyle(color: cs.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -153,45 +162,24 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 16),
 
-            // ── 데이터/로그(더미) ────────────────────────────────────────
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.bar_chart_outlined),
-                title: const Text('Usage & noise stats'),
-                subtitle: const Text(
-                  'View noise patterns and suppression history (demo)',
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Demo: stats page is not implemented yet.'),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // ── 저장 버튼(더미) ─────────────────────────────────────────
+            // ── Save changes ─────────────────────────────────────────
             FilledButton(
               onPressed: saving ? null : _save,
               child: saving
                   ? const SizedBox(
-                      height: 22,
                       width: 22,
+                      height: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text('Save changes'),
             ),
             const SizedBox(height: 10),
-            FilledButton.tonalIcon(
-              onPressed: () {
-                Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil('/login', (route) => false);
-              },
 
+            // 로그아웃 버튼(그대로 유지)
+            FilledButton.tonalIcon(
+              onPressed: () => Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/login', (route) => false),
               label: const Text('Log out'),
             ),
           ],
@@ -202,22 +190,18 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _save() async {
     setState(() => saving = true);
-    await Future.delayed(const Duration(milliseconds: 300)); // 데모용
+    final store = context.read<AncStore>();
+
+    // 1) 이름 저장 (백엔드 연동 지점)
+    await store.updateUserName(nameCtrl.text);
+
+    // 2) 모드/프리셋 저장 필요 시 여기서 API 호출 추가
+    // await api.saveAncPreset(mode: store.mode, auto: store.auto, intensity: store.intensity);
+
     if (!mounted) return;
     setState(() => saving = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Saved (demo: local state only)')),
+      const SnackBar(content: Text('Profile updated successfully')),
     );
   }
-}
-
-class AncPreset {
-  final double intensity; // 0..1
-  final bool auto;
-  const AncPreset({required this.intensity, required this.auto});
-
-  AncPreset copyWith({double? intensity, bool? auto}) => AncPreset(
-    intensity: intensity ?? this.intensity,
-    auto: auto ?? this.auto,
-  );
 }
