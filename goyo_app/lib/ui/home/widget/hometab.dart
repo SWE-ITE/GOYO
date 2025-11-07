@@ -15,20 +15,14 @@ class _HomeTabState extends State<HomeTab> {
     NoiseRule(
       title: 'Low-frequency hum',
       icon: Icons.vibration,
-      thresholdDb: 45,
+      controllNoise: 45,
       enabled: true,
     ),
     NoiseRule(
       title: 'Fan noise',
       icon: Icons.toys,
-      thresholdDb: 50,
+      controllNoise: 50,
       enabled: false,
-    ),
-    NoiseRule(
-      title: 'Impact noise',
-      icon: Icons.sensors,
-      thresholdDb: 60,
-      enabled: true,
     ),
   ];
 
@@ -109,7 +103,7 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   void _editRule(NoiseRule r) async {
-    final controller = TextEditingController(text: r.thresholdDb.toString());
+    final controller = TextEditingController(text: r.controllNoise.toString());
     final cs = Theme.of(context).colorScheme;
     await showModalBottomSheet(
       context: context,
@@ -133,7 +127,7 @@ class _HomeTabState extends State<HomeTab> {
               controller: controller,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Threshold (dB)',
+                labelText: 'controllNoise',
                 hintText: 'e.g., 50',
                 prefixIcon: Icon(Icons.graphic_eq),
               ),
@@ -141,9 +135,10 @@ class _HomeTabState extends State<HomeTab> {
             const SizedBox(height: 12),
             FilledButton(
               onPressed: () {
+                // 바텀시트 Save 버튼
                 final v = int.tryParse(controller.text.trim());
                 if (v != null) {
-                  setState(() => r.thresholdDb = v);
+                  setState(() => r.controllNoise = v.clamp(0, 100));
                   Navigator.pop(context);
                 }
               },
@@ -156,40 +151,107 @@ class _HomeTabState extends State<HomeTab> {
   }
 }
 
-class _NoiseRuleTile extends StatelessWidget {
+class _NoiseRuleTile extends StatefulWidget {
   final NoiseRule rule;
   final ValueChanged<bool> onToggle;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+
+  // (선택) 외부에도 값 변경 통지하고 싶으면 콜백 추가 가능
+  final ValueChanged<int>? onIntensityChanged;
 
   const _NoiseRuleTile({
     required this.rule,
     required this.onToggle,
     required this.onEdit,
     required this.onDelete,
+    this.onIntensityChanged,
   });
+
+  @override
+  State<_NoiseRuleTile> createState() => _NoiseRuleTileState();
+}
+
+class _NoiseRuleTileState extends State<_NoiseRuleTile> {
+  late int _intensity; // 0~100
+
+  @override
+  void initState() {
+    super.initState();
+    _intensity = (widget.rule.controllNoise).clamp(0, 100);
+  }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
     return Card(
-      child: ListTile(
-        leading: Icon(rule.icon, color: cs.primary),
-        title: Text(rule.title),
-        subtitle: Text('Threshold: ${rule.thresholdDb} dB'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            IconButton(
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined),
+            // 상단 행: 아이콘 + 제목 + 액션들
+            Row(
+              children: [
+                Icon(widget.rule.icon, color: cs.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    widget.rule.title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: widget.onEdit,
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Edit rule',
+                ),
+                IconButton(
+                  onPressed: widget.onDelete,
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Delete rule',
+                ),
+                Switch(value: widget.rule.enabled, onChanged: widget.onToggle),
+              ],
             ),
-            IconButton(
-              onPressed: onDelete,
-              icon: const Icon(Icons.delete_outline),
+
+            const SizedBox(height: 8),
+
+            // 슬라이더 라벨
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Reduction intensity',
+                  style: TextStyle(color: cs.onSurfaceVariant),
+                ),
+                Text(
+                  '$_intensity %',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface,
+                  ),
+                ),
+              ],
             ),
-            Switch(value: rule.enabled, onChanged: onToggle),
+
+            // 슬라이더 본체
+            Slider.adaptive(
+              value: _intensity.toDouble(),
+              min: 0,
+              max: 100,
+              divisions: 20,
+              onChanged: (v) => setState(() => _intensity = v.round()),
+              onChangeEnd: (v) {
+                final val = v.round().clamp(0, 100);
+                widget.rule.controllNoise = val;
+                widget.onIntensityChanged?.call(val);
+              },
+            ),
           ],
         ),
       ),
@@ -201,12 +263,12 @@ class NoiseRule {
   NoiseRule({
     required this.title,
     required this.icon,
-    required this.thresholdDb,
+    int? controllNoise, // <- nullable로 받고
     required this.enabled,
-  });
+  }) : controllNoise = (controllNoise ?? 50).clamp(0, 100); // <- 기본/범위 보정
 
   String title;
   IconData icon;
-  int thresholdDb;
+  int controllNoise;
   bool enabled;
 }

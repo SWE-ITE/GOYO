@@ -39,7 +39,7 @@ class GoyoApp extends StatelessWidget {
         theme: AppTheme.light(), // ✅ 공통 테마
         darkTheme: AppTheme.dark(), // ✅ 다크 테마(선택)
         themeMode: ThemeMode.light, // 시스템/다크 스위칭 가능
-        initialRoute: '/login',
+        initialRoute: '/home',
         routes: {
           '/login': (_) => const LoginPage(),
           '/home': (_) => const HomePage(), // HomePage(initialIndex: 1) 가능
