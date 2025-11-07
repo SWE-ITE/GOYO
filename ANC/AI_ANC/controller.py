@@ -52,11 +52,11 @@ class AIANCController:
         stride: int = 1,
     ) -> Iterable[float]:
         """
-        Fit the learned secondary path model.
+        Fit the learned secondary path model by supervised training.
         """
-        exc = torch.from_numpy(excitation.astype(np.float32))
-        rsp = torch.from_numpy(response.astype(np.float32))
-        dataset = SecondaryPathDataset(exc, rsp, window_length=self.filter_length, stride=stride)
+        excitation = torch.from_numpy(excitation.astype(np.float32))
+        response = torch.from_numpy(response.astype(np.float32))
+        dataset = SecondaryPathDataset(excitation, response, window_length=self.filter_length, stride=stride)
         history = list(
             self.secondary_model.fit(
                 dataset,

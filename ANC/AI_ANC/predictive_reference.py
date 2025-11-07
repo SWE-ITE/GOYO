@@ -8,7 +8,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
-
+# Gerate dataset for training the reference signal predictor
 class _ReferenceDataset(Dataset):
     def __init__(self, signal: torch.Tensor, lookback: int, horizon: int, stride: int) -> None:
         super().__init__()
@@ -32,7 +32,7 @@ class _ReferenceDataset(Dataset):
         target = self.signal[end:target_end]
         return context, target
 
-
+# Simple LSTM-based sequence model for forecasting
 class _SequenceModel(nn.Module):
     def __init__(self, input_dim: int, hidden_dim: int, num_layers: int) -> None:
         super().__init__()
