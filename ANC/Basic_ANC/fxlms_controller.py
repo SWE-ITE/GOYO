@@ -74,9 +74,12 @@ class FxLMSANC:
     Parameters
     ----------
     reference_path:
-        WAV path for the prerecorded noise reference signal.
+        Optional WAV path for the prerecorded noise reference signal. Omit this
+        when providing ``reference_input_device_index`` for a live microphone
+        reference.
     sample_rate:
         Desired operating sample rate. If None, the reference file's rate is used.
+        Required when using a live reference microphone.
     filter_length:
         Number of taps in the adaptive control filter.
     step_size:
@@ -95,6 +98,10 @@ class FxLMSANC:
         Provide this when you need to feed the original noise into a separate
         loudspeaker. If omitted and ``play_reference`` is True, the reference
         signal is mixed into the control speaker instead (legacy behaviour).
+    reference_input_device_index:
+        PyAudio input device index for a live reference microphone. When
+        provided, the controller ignores ``reference_path`` and continuously
+        samples this device for the reference signal.
     split_reference_channels:
         When True, the control output is stereo with the reference on the left
         channel and the anti-noise on the right channel. Use this to drive both
@@ -110,7 +117,7 @@ class FxLMSANC:
 
     def __init__(
         self,
-        reference_path: str,
+        reference_path: Optional[str] = None,
         sample_rate: Optional[int] = None,
         filter_length: int = DEFAULT_FILTER_LENGTH,
         step_size: float = 5e-4,
@@ -119,25 +126,41 @@ class FxLMSANC:
         control_device_index: Optional[int] = None,
         record_device_index: Optional[int] = None,
         reference_device_index: Optional[int] = None,
+        reference_input_device_index: Optional[int] = None,
         split_reference_channels: bool = False,
         play_reference: bool = False,
         normalize_step: bool = True,
     ):
-        self.reference_signal, ref_rate = read_mono_wav(reference_path)
-
-        self.sample_rate = sample_rate or ref_rate
-        if self.sample_rate != ref_rate:
+        if reference_path is None and reference_input_device_index is None:
             raise ValueError(
-                f"Reference sample rate ({ref_rate} Hz) does not match "
-                f"requested {self.sample_rate} Hz. Resample the file before use."
+                "Provide reference_path or reference_input_device_index for live reference input."
             )
 
-        self.filter_length = filter_length
         self.block_size = block_size
+        self.filter_length = filter_length
         self.base_step_size = step_size
         self.normalize_step = normalize_step
         self.play_reference = play_reference
         self.split_reference_channels = split_reference_channels
+
+        self.reference_input_device_index = reference_input_device_index
+        self._live_reference = reference_input_device_index is not None
+
+        if reference_path is not None:
+            self.reference_signal, ref_rate = read_mono_wav(reference_path)
+            self.sample_rate = sample_rate or ref_rate
+            if self.sample_rate != ref_rate:
+                raise ValueError(
+                    f"Reference sample rate ({ref_rate} Hz) does not match "
+                    f"requested {self.sample_rate} Hz. Resample the file before use."
+                )
+        else:
+            if sample_rate is None:
+                raise ValueError(
+                    "sample_rate must be provided when using reference_input_device_index."
+                )
+            self.sample_rate = sample_rate
+            self.reference_signal = np.zeros(self.block_size, dtype=np.float32)
 
         if secondary_path is None:
             # Use a single-sample delta if no model is provided.
@@ -153,6 +176,11 @@ class FxLMSANC:
         self.record_device_index = record_device_index
         self.reference_device_index = reference_device_index
 
+        if self._live_reference and self.reference_device_index is not None:
+            raise ValueError(
+                "reference_device_index cannot be used when reference_input_device_index is provided."
+            )
+
         if self.split_reference_channels and self.reference_device_index is not None:
             raise ValueError(
                 "Cannot set reference_device_index when split_reference_channels is True."
@@ -162,6 +190,7 @@ class FxLMSANC:
         self._control_stream = None
         self._reference_stream = None
         self._input_stream = None
+        self._reference_input_stream = None
         self._stop_requested = False
 
         self._reset_state()
@@ -216,6 +245,16 @@ class FxLMSANC:
                 input_device_index=self.record_device_index,
             )
 
+        if self._live_reference and self._reference_input_stream is None:
+            self._reference_input_stream = self._audio.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=self.sample_rate,
+                input=True,
+                frames_per_buffer=self.block_size,
+                input_device_index=self.reference_input_device_index,
+            )
+
     def _close_streams(self) -> None:
         """Close streams and terminate PyAudio."""
         if self._control_stream:
@@ -230,11 +269,26 @@ class FxLMSANC:
             self._input_stream.stop_stream()
             self._input_stream.close()
             self._input_stream = None
+        if self._reference_input_stream:
+            self._reference_input_stream.stop_stream()
+            self._reference_input_stream.close()
+            self._reference_input_stream = None
         if self._audio:
             self._audio.terminate()
 
     def _next_reference_block(self, loop: bool) -> np.ndarray:
         """Fetch the next reference block, padding or looping as required."""
+        if self._live_reference:
+            if self._reference_input_stream is None:
+                raise RuntimeError("Reference input stream is not open.")
+            raw = self._reference_input_stream.read(
+                self.block_size, exception_on_overflow=False
+            )
+            block = (
+                np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+            )
+            return block
+
         start = self.reference_index
         end = start + self.block_size
         if start >= len(self.reference_signal):
@@ -297,8 +351,10 @@ class FxLMSANC:
                     break
 
                 ref_block = self._next_reference_block(loop_reference)
-                if not loop_reference and self.reference_index >= len(
-                    self.reference_signal
+                if (
+                    not self._live_reference
+                    and not loop_reference
+                    and self.reference_index >= len(self.reference_signal)
                 ):
                     # We are at the final padded block and will exit next iteration.
                     self._stop_requested = True

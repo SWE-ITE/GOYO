@@ -30,23 +30,24 @@ def load_secondary_path(path: Path) -> np.ndarray:
 
 
 def create_controller(
-    reference_path: Path,
+    reference_path: Optional[Path],
     *,
     secondary_path_file: Optional[Path] = None,
     control_device: Optional[int] = None,
     record_device: Optional[int] = None,
     reference_device: Optional[int] = None,
+    reference_input_device: Optional[int] = None,
     split_reference_channels: bool = False,
     play_reference: bool = False,
     step_size: float = 5e-4,
     block_size: Optional[int] = None,
     filter_length: Optional[int] = None,
+    sample_rate: Optional[int] = None,
 ) -> FxLMSANC:
     """
     Construct an ``FxLMSANC`` instance with shared configuration defaults.
     """
     init_kwargs = {
-        "reference_path": str(reference_path),
         "control_device_index": control_device,
         "record_device_index": record_device,
         "reference_device_index": reference_device,
@@ -54,12 +55,18 @@ def create_controller(
         "play_reference": play_reference,
         "step_size": step_size,
     }
+    if reference_path is not None:
+        init_kwargs["reference_path"] = str(reference_path)
+    if reference_input_device is not None:
+        init_kwargs["reference_input_device_index"] = reference_input_device
     if secondary_path_file is not None:
         init_kwargs["secondary_path"] = load_secondary_path(secondary_path_file)
     if block_size is not None:
         init_kwargs["block_size"] = block_size
     if filter_length is not None:
         init_kwargs["filter_length"] = filter_length
+    if sample_rate is not None:
+        init_kwargs["sample_rate"] = sample_rate
 
     return FxLMSANC(**init_kwargs)
 
