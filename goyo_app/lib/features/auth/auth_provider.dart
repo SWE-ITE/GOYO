@@ -4,27 +4,37 @@ import 'package:goyo_app/data/services/api_service.dart';
 import 'package:goyo_app/core/auth/token_manager.dart';
 
 class UserProfile {
+  final int id;
   final String email;
   final String name;
-  final String? phone;
-  final bool isVerified;
-  final bool isActive;
+  final bool ancEnabled;
+  final int suppressionLevel;
+  final DateTime? createdAt;
 
-  UserProfile({
+  const UserProfile({
+    required this.id,
     required this.email,
     required this.name,
-    this.phone,
-    required this.isVerified,
-    required this.isActive,
+    required this.ancEnabled,
+    required this.suppressionLevel,
+    this.createdAt,
   });
 
-  factory UserProfile.fromJson(Map<String, dynamic> j) => UserProfile(
-    email: j['email'] as String,
-    name: (j['name'] ?? '') as String,
-    phone: j['phone'] as String?,
-    isVerified: (j['is_verified'] ?? false) as bool,
-    isActive: (j['is_active'] ?? false) as bool,
-  );
+  factory UserProfile.fromJson(Map<String, dynamic> j) {
+    final created = j['created_at'];
+    return UserProfile(
+      id: (j['id'] as num).toInt(),
+      email: j['email'] as String,
+      name: (j['name'] ?? '') as String,
+      ancEnabled: (j['anc_enabled'] ?? false) as bool,
+      suppressionLevel: (j['suppression_level'] as num? ?? 0).toInt(),
+      createdAt: created is String
+          ? DateTime.tryParse(created)
+          : created is DateTime
+              ? created
+              : null,
+    );
+  }
 }
 
 class AuthProvider extends ChangeNotifier {
@@ -33,10 +43,16 @@ class AuthProvider extends ChangeNotifier {
 
   String? _accessToken;
   UserProfile? _me;
+  bool _profileLoading = false;
+  bool _profileUpdating = false;
+  String? _profileError;
   bool _bootstrapped = false;
 
   String? get token => _accessToken;
   UserProfile? get me => _me;
+  bool get profileLoading => _profileLoading;
+  bool get profileUpdating => _profileUpdating;
+  String? get profileError => _profileError;
   bool get isLoggedIn => _accessToken != null && _me != null;
   bool get bootstrapped => _bootstrapped;
 
@@ -45,7 +61,11 @@ class AuthProvider extends ChangeNotifier {
     try {
       _accessToken = await TokenManager.getToken();
       if (_accessToken != null && _accessToken!.isNotEmpty) {
-        await loadMe();
+        try {
+          await loadMe();
+        } catch (_) {
+          // 에러는 profileError에 저장되므로 무시하고 부트스트랩 완료
+        }
       }
     } finally {
       _bootstrapped = true;
@@ -74,22 +94,48 @@ class AuthProvider extends ChangeNotifier {
     } catch (_) {}
     _accessToken = null;
     _me = null;
+    _profileError = null;
+    _profileLoading = false;
+    _profileUpdating = false;
     await TokenManager.clearToken();
     notifyListeners();
   }
 
   /// 내 프로필 가져오기
   Future<void> loadMe() async {
-    final data = await api.getMe(); // ApiService에 구현 필요(아래 참고)
-    _me = data;
+    _profileLoading = true;
+    _profileError = null;
     notifyListeners();
+
+    try {
+      final data = await api.getMe(); // ApiService에 구현 필요(아래 참고)
+      _me = data;
+    } catch (e) {
+      _profileError = e.toString();
+      rethrow;
+    } finally {
+      _profileLoading = false;
+      notifyListeners();
+    }
   }
 
   /// 이름 변경 후 다시 로드(또는 로컬 반영)
   Future<void> updateMyName(String newName) async {
     final n = newName.trim();
     if (n.isEmpty) return;
-    await api.updateProfile(name: n); // ApiService에 구현 필요
-    await loadMe();
+    _profileUpdating = true;
+    _profileError = null;
+    notifyListeners();
+
+    try {
+      final data = await api.updateProfile(name: n); // ApiService에 구현 필요
+      _me = data;
+    } catch (e) {
+      _profileError = e.toString();
+      rethrow;
+    } finally {
+      _profileUpdating = false;
+      notifyListeners();
+    }
   }
 }

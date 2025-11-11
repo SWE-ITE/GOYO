@@ -121,11 +121,35 @@ extension AuthApi on ApiService {
 
 extension ProfileApi on ApiService {
   Future<UserProfile> getMe() async {
-    final res = await _dio.get('/api/profile'); // 서버 스펙에 맞춰 수정
-    return UserProfile.fromJson(res.data as Map<String, dynamic>);
+    try {
+      final res = await _dio.get('/api/profile/');
+      final data = res.data;
+      if (data is! Map<String, dynamic>) {
+        throw const FormatException('Invalid profile payload');
+      }
+      return UserProfile.fromJson(data);
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      final msg = _pretty(e.response?.data) ?? e.message ?? 'Failed to load profile';
+      throw Exception('Profile fetch failed ($code): $msg');
+    }
   }
 
-  Future<void> updateProfile({required String name}) async {
-    await _dio.put('/api/profile', data: {'name': name});
+  Future<UserProfile> updateProfile({required String name}) async {
+    try {
+      final res = await _dio.put(
+        '/api/profile/',
+        data: {'name': name},
+      );
+      final data = res.data;
+      if (data is! Map<String, dynamic>) {
+        throw const FormatException('Invalid profile payload');
+      }
+      return UserProfile.fromJson(data);
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      final msg = _pretty(e.response?.data) ?? e.message ?? 'Failed to update profile';
+      throw Exception('Profile update failed ($code): $msg');
+    }
   }
 }
