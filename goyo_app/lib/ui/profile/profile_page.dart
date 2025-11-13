@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:goyo_app/features/anc/anc_store.dart';
+import 'package:goyo_app/features/auth/auth_provider.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -11,13 +12,21 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final nameCtrl = TextEditingController();
-  bool saving = false;
+  String? _lastLoadedName;
 
   @override
   void initState() {
     super.initState();
     final store = context.read<AncStore>();
     nameCtrl.text = store.userName;
+    _lastLoadedName = store.userName;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profileName = context.read<AuthProvider>().me?.name;
+      if (profileName != null && profileName.isNotEmpty) {
+        _syncController(profileName);
+      }
+    });
   }
 
   @override
@@ -29,6 +38,61 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final auth = context.watch<AuthProvider>();
+    final profile = auth.me;
+
+    if (auth.profileLoading && profile == null) {
+      return const Scaffold(
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+
+    if (auth.profileError != null && profile == null) {
+      return Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Colors.redAccent,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '프로필 정보를 불러오지 못했습니다.',
+                  style: Theme.of(context).textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  auth.profileError!,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: cs.error),
+                ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: auth.profileLoading
+                      ? null
+                      : () => context.read<AuthProvider>().loadMe(),
+                  child: const Text('다시 시도'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (profile?.name != null && profile!.name != _lastLoadedName) {
+      _syncController(profile.name);
+    }
+
     final anc = context.watch<AncStore>();
     final current = anc.mode;
 
@@ -37,6 +101,32 @@ class _ProfilePageState extends State<ProfilePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (auth.profileError != null)
+              Card(
+                color: cs.errorContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: cs.onErrorContainer),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          auth.profileError!,
+                          style: TextStyle(color: cs.onErrorContainer),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: auth.profileLoading
+                            ? null
+                            : () => context.read<AuthProvider>().loadMe(),
+                        child: const Text('새로고침'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (auth.profileError != null) const SizedBox(height: 12),
             // ── User info ─────────────────────────────────────────────
             Card(
               child: Padding(
@@ -57,6 +147,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           hintText: 'Enter your display name',
                           prefixIcon: Icon(Icons.badge_outlined),
                         ),
+                        enabled: !auth.profileUpdating,
                       ),
                     ),
                   ],
@@ -164,8 +255,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
             // ── Save changes ─────────────────────────────────────────
             FilledButton(
-              onPressed: saving ? null : _save,
-              child: saving
+              onPressed: auth.profileUpdating ? null : _save,
+              child: auth.profileUpdating
                   ? const SizedBox(
                       width: 22,
                       height: 22,
@@ -189,19 +280,38 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _save() async {
-    setState(() => saving = true);
-    final store = context.read<AncStore>();
+    final auth = context.read<AuthProvider>();
+    final trimmed = nameCtrl.text.trim();
+    if (trimmed.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이름을 입력해 주세요.')));
+      return;
+    }
 
     // 1) 이름 저장 (백엔드 연동 지점)
-    await store.updateUserName(nameCtrl.text);
+    try {
+      await auth.updateMyName(trimmed);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('이름 변경에 실패했어요: $e')));
+    }
+  }
 
-    // 2) 모드/프리셋 저장 필요 시 여기서 API 호출 추가
-    // await api.saveAncPreset(mode: store.mode, auto: store.auto, intensity: store.intensity);
+  // 2) 모드/프리셋 저장 필요 시 여기서 API 호출 추가
+  // await api.saveAncPreset(mode: store.mode, auto: store.auto, intensity: store.intensity);
 
-    if (!mounted) return;
-    setState(() => saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile updated successfully')),
+  void _syncController(String name) {
+    _lastLoadedName = name;
+    nameCtrl.value = TextEditingValue(
+      text: name,
+      selection: TextSelection.collapsed(offset: name.length),
     );
   }
 }

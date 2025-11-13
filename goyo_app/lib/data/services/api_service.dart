@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:goyo_app/core/config/env.dart';
 import 'package:goyo_app/core/auth/token_manager.dart';
 import 'package:goyo_app/features/auth/auth_provider.dart';
+import 'package:goyo_app/data/models/device_models.dart';
 
 class ApiService {
   ApiService({Dio? dio})
@@ -121,11 +122,81 @@ extension AuthApi on ApiService {
 
 extension ProfileApi on ApiService {
   Future<UserProfile> getMe() async {
-    final res = await _dio.get('/api/profile'); // 서버 스펙에 맞춰 수정
-    return UserProfile.fromJson(res.data as Map<String, dynamic>);
+    try {
+      final res = await _dio.get('/api/profile/');
+      final data = res.data;
+      if (data is! Map<String, dynamic>) {
+        throw const FormatException('Invalid profile payload');
+      }
+      return UserProfile.fromJson(data);
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      final msg =
+          _pretty(e.response?.data) ?? e.message ?? 'Failed to load profile';
+      throw Exception('Profile fetch failed ($code): $msg');
+    }
   }
 
-  Future<void> updateProfile({required String name}) async {
-    await _dio.put('/api/profile', data: {'name': name});
+  Future<UserProfile> updateProfile({required String name}) async {
+    try {
+      final res = await _dio.put('/api/profile/', data: {'name': name});
+      final data = res.data;
+      if (data is! Map<String, dynamic>) {
+        throw const FormatException('Invalid profile payload');
+      }
+      return UserProfile.fromJson(data);
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      final msg =
+          _pretty(e.response?.data) ?? e.message ?? 'Failed to update profile';
+      throw Exception('Profile update failed ($code): $msg');
+    }
+  }
+}
+
+extension DeviceManagementApi on ApiService {
+  Future<List<DeviceDto>> getDevices() async {
+    try {
+      final res = await _dio.get('/api/devices');
+      final list = res.data as List<dynamic>;
+      return list
+          .map((e) => DeviceDto.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      final msg = e.response?.data ?? e.message;
+      throw Exception('Failed to load devices: $msg');
+    }
+  }
+
+  Future<List<DiscoveredDevice>> discoverWifiDevices() async {
+    try {
+      final res = await _dio.post('/api/devices/discover/wifi');
+      final list = res.data as List<dynamic>;
+      return list
+          .map((e) => DiscoveredDevice.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      final msg = e.response?.data ?? e.message;
+      throw Exception('Failed to scan devices: $msg');
+    }
+  }
+
+  Future<DeviceDto> pairDevice(PairDeviceRequest body) async {
+    try {
+      final res = await _dio.post('/api/devices/pair', data: body.toJson());
+      return DeviceDto.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final msg = e.response?.data ?? e.message;
+      throw Exception('Pairing failed: $msg');
+    }
+  }
+
+  Future<void> deleteDevice(String deviceId) async {
+    try {
+      await _dio.delete('/api/devices/$deviceId');
+    } on DioException catch (e) {
+      final msg = e.response?.data ?? e.message;
+      throw Exception('Failed to delete device: $msg');
+    }
   }
 }
