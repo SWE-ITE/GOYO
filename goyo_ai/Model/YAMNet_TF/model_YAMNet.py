@@ -6,8 +6,8 @@ from sklearn.utils import class_weight
 from tensorflow.keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from pathlib import Path
-from custom_layers import YAMNetLayer
-from data_generator import SoundDataGenerator
+from layers import YAMNetLayer
+from dataset_YAMNet import SoundDataGenerator
 
 def scan_dataset(dataset_path, class_names):
     file_paths = []
