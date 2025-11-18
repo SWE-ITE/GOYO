@@ -1,68 +1,119 @@
+"""
+Live microphone monitor for the configured ANC inputs.
+
+This opens the devices configured in ``ANC.real-time_ANC.realtime_cli`` and shows
+two live time-domain plots:
+  - Error mic (from RECORD_DEVICE, channel ERROR_INPUT_CHANNEL)
+  - Reference mic (from RECORD_DEVICE reference channel, or a dedicated
+    REFERENCE_INPUT_DEVICE if configured)
+
+Usage:
+    python -m ANC.utils.mictest
+"""
+
+from __future__ import annotations
+
+import logging
+import time
+from typing import Optional, Tuple
+
 import numpy as np
-import pyaudio  # type: ignore
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from collections import deque
-import signal
+import pyaudio  # type: ignore
 
-SAMPLE_RATE = 16000
-CHUNK = 1024
-CHANNELS = 1
-WINDOW_SECONDS = 2.0
-FORMAT = pyaudio.paInt16
+from ANC.realtime_ANC import realtime_cli
 
-p = pyaudio.PyAudio()
-stream = p.open(
-    format=FORMAT,
-    channels=CHANNELS,
-    rate=SAMPLE_RATE,
-    input=True,
-    frames_per_buffer=CHUNK,
-)
 
-samples_per_window = int(SAMPLE_RATE * WINDOW_SECONDS)
-time_axis = np.linspace(-WINDOW_SECONDS, 0, samples_per_window, endpoint=False)
-buffer = deque(np.zeros(samples_per_window, dtype=np.float32), maxlen=samples_per_window)
+def _open_stream(
+    pa: pyaudio.PyAudio, device_index: int, channels: int, rate: int, frames_per_buffer: int
+) -> pyaudio.Stream:
+    return pa.open(
+        format=pyaudio.paInt16,
+        channels=channels,
+        rate=rate,
+        input=True,
+        frames_per_buffer=frames_per_buffer,
+        input_device_index=device_index,
+    )
 
-fig, ax = plt.subplots(figsize=(10, 4))
-(line,) = ax.plot(time_axis, np.zeros_like(time_axis))
-level_text = ax.text(0.02, 0.9, "", transform=ax.transAxes, fontsize=10)
 
-ax.set_xlim(time_axis[0], time_axis[-1] + (WINDOW_SECONDS / samples_per_window))
-ax.set_ylim(-1.0, 1.0)
-ax.set_xlabel("Time (s)")
-ax.set_ylabel("Amplitude")
-ax.set_title("Live Microphone Waveform")
-ax.grid(True, linestyle="--", linewidth=0.5)
+def _extract_channels(
+    block: np.ndarray, channels: int
+) -> np.ndarray:
+    frames = np.frombuffer(block, dtype=np.int16).astype(np.float32) / 32768.0
+    return frames.reshape(-1, channels)
 
-def update(_frame: int):
-    raw = stream.read(CHUNK, exception_on_overflow=False)
-    samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
-    buffer.extend(samples)
 
-    waveform = np.asarray(buffer)
-    line.set_ydata(waveform)
+def main() -> int:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    rms = np.sqrt(np.mean(waveform**2)) + 1e-12
-    level_text.set_text(f"RMS: {20 * np.log10(rms):.1f} dBFS")
+    record_device = realtime_cli.RECORD_DEVICE
+    ref_input_device = realtime_cli.REFERENCE_INPUT_DEVICE
+    err_ch = realtime_cli.ERROR_INPUT_CHANNEL
+    ref_ch = realtime_cli.REFERENCE_INPUT_CHANNEL
+    sample_rate = realtime_cli.REFERENCE_SAMPLE_RATE or 16_000
+    block_size = realtime_cli.BLOCK_SIZE or 1024
 
-    return line, level_text
+    if record_device is None:
+        raise ValueError("Set RECORD_DEVICE in realtime_cli.py before running this monitor.")
 
-def cleanup(_event=None):
-    if stream.is_active():
-        stream.stop_stream()
-    stream.close()
-    p.terminate()
+    record_channels = max(err_ch, ref_ch if ref_ch is not None else 0) + 1
 
-def handle_sigint(_sig, _frame):
-    plt.close(fig)
+    pa = pyaudio.PyAudio()
+    record_stream = _open_stream(pa, record_device, record_channels, sample_rate, block_size)
+    ref_stream: Optional[pyaudio.Stream] = None
+    if ref_input_device is not None:
+        ref_stream = _open_stream(pa, ref_input_device, 1, sample_rate, block_size)
 
-signal.signal(signal.SIGINT, handle_sigint)
-fig.canvas.mpl_connect("close_event", cleanup)
+    plt.ion()
+    fig, (ax_err, ax_ref) = plt.subplots(2, 1, num="Mic Test (error/ref)")
+    err_line, = ax_err.plot([], [], lw=1)
+    ref_line, = ax_ref.plot([], [], lw=1)
 
-anim = FuncAnimation(fig, update, interval=1000 * CHUNK / SAMPLE_RATE, blit=True)
+    ax_err.set_title("Error mic")
+    ax_ref.set_title("Reference mic")
+    for ax in (ax_err, ax_ref):
+        ax.set_ylim(-1.1, 1.1)
+        ax.set_xlim(0, block_size)
+        ax.grid(True, which="both", linestyle="--", alpha=0.4)
 
-try:
-    plt.show()
-finally:
-    cleanup()
+    logging.info("Monitoring mics (Ctrl+C to stop). record_device=%s ref_device=%s", record_device, ref_input_device)
+    try:
+        while True:
+            raw = record_stream.read(block_size, exception_on_overflow=False)
+            frames = _extract_channels(raw, record_channels)
+            err_sig = frames[:, err_ch]
+
+            if ref_stream is not None:
+                raw_ref = ref_stream.read(block_size, exception_on_overflow=False)
+                ref_sig = _extract_channels(raw_ref, 1)[:, 0]
+            elif ref_ch is not None and ref_ch < record_channels:
+                ref_sig = frames[:, ref_ch]
+            else:
+                ref_sig = np.zeros_like(err_sig)
+
+            x_axis = np.arange(len(err_sig))
+            err_line.set_data(x_axis, err_sig)
+            ref_line.set_data(x_axis, ref_sig)
+            for ax in (ax_err, ax_ref):
+                ax.set_xlim(0, len(err_sig))
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+            plt.pause(0.001)
+    except KeyboardInterrupt:
+        logging.info("Stopping mic monitor.")
+    finally:
+        record_stream.stop_stream()
+        record_stream.close()
+        if ref_stream is not None:
+            ref_stream.stop_stream()
+            ref_stream.close()
+        pa.terminate()
+        plt.ioff()
+        plt.show()
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

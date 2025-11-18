@@ -16,7 +16,7 @@ from typing import Optional
 import numpy as np
 import pyaudio  # type: ignore
 
-from fxlms_controller import DEFAULT_BLOCK_SIZE, FxLMSANC, read_mono_wav
+from .fxlms_controller import DEFAULT_BLOCK_SIZE, FxLMSANC, read_mono_wav
 
 
 def load_secondary_path(path: Path) -> np.ndarray:
@@ -37,12 +37,21 @@ def create_controller(
     record_device: Optional[int] = None,
     reference_device: Optional[int] = None,
     reference_input_device: Optional[int] = None,
+    error_input_channel: int = 0,
+    reference_input_channel: Optional[int] = None,
+    control_output_gain: float = 1.0,
+    require_reference: bool = True,
+    control_output_channel: int = 0,
+    reference_output_channel: int = 0,
     split_reference_channels: bool = False,
     play_reference: bool = False,
     step_size: float = 5e-4,
     block_size: Optional[int] = None,
     filter_length: Optional[int] = None,
     sample_rate: Optional[int] = None,
+    manual_gain_mode: bool = False,
+    manual_gain: float = 0.0,
+    leakage: float = 1e-4,
 ) -> FxLMSANC:
     """
     Construct an ``FxLMSANC`` instance with shared configuration defaults.
@@ -54,11 +63,21 @@ def create_controller(
         "split_reference_channels": split_reference_channels,
         "play_reference": play_reference,
         "step_size": step_size,
+        "error_channel_index": error_input_channel,
+        "control_output_gain": control_output_gain,
+        "require_reference": require_reference,
+        "control_output_channel": control_output_channel,
+        "reference_output_channel": reference_output_channel,
+        "manual_gain_mode": manual_gain_mode,
+        "manual_gain": manual_gain,
+        "leakage": leakage,
     }
     if reference_path is not None:
         init_kwargs["reference_path"] = str(reference_path)
     if reference_input_device is not None:
         init_kwargs["reference_input_device_index"] = reference_input_device
+    if reference_input_channel is not None:
+        init_kwargs["reference_channel_index"] = reference_input_channel
     if secondary_path_file is not None:
         init_kwargs["secondary_path"] = load_secondary_path(secondary_path_file)
     if block_size is not None:
@@ -76,6 +95,7 @@ def play_reference(
     *,
     control_device: Optional[int],
     reference_device: Optional[int],
+    output_channel: int = 0,
     split_reference_channels: bool,
     block_size: Optional[int],
     duration: Optional[float],
@@ -97,19 +117,22 @@ def play_reference(
     block_len = block_size if block_size is not None else DEFAULT_BLOCK_SIZE
 
     pa = pyaudio.PyAudio()
+    ctrl_channels = 2 if split_reference_channels else max(1, output_channel + 1)
     control_stream = pa.open(
         format=pyaudio.paFloat32,
-        channels=2 if split_reference_channels else 1,
+        channels=ctrl_channels,
         rate=sample_rate,
         output=True,
         frames_per_buffer=block_len,
         output_device_index=control_device,
     )
     reference_stream = None
+    ref_channels = None
     if reference_device is not None:
+        ref_channels = max(1, output_channel + 1)
         reference_stream = pa.open(
             format=pyaudio.paFloat32,
-            channels=1,
+            channels=ref_channels,
             rate=sample_rate,
             output=True,
             frames_per_buffer=block_len,
@@ -140,10 +163,14 @@ def play_reference(
                 stereo[0::2] = block
                 control_stream.write(stereo.tobytes())
             else:
-                control_stream.write(block.tobytes())
+                ctrl_buf = np.zeros((block_len, ctrl_channels), dtype=np.float32)
+                ctrl_buf[:, output_channel] = block
+                control_stream.write(ctrl_buf.astype(np.float32).tobytes())
 
             if reference_stream is not None:
-                reference_stream.write(block.tobytes())
+                ref_buf = np.zeros((block_len, ref_channels), dtype=np.float32)
+                ref_buf[:, output_channel] = block
+                reference_stream.write(ref_buf.astype(np.float32).tobytes())
 
             index += block_len
             if index >= len(signal):
