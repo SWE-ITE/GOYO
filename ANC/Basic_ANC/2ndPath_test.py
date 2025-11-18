@@ -11,12 +11,12 @@ import logging
 from pathlib import Path
 import numpy as np
 
-from session_utils import create_controller
+from .session_utils import create_controller
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-REFERENCE_PATH = Path(__file__).resolve().parent / "src/sine_200Hz.wav"
+REFERENCE_PATH = "src/sine_200Hz.wav"
 OUTPUT_PATH = Path(__file__).resolve().parent / "secondary_path.npy"
 
 CONTROL_DEVICE = 3          # Output device index for the control/anti-noise speaker

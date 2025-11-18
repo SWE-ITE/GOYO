@@ -5,7 +5,7 @@ import soundfile as sf
 # Configuration
 # ---------------------------------------
 fs = 16000          # Sample rate in Hz
-duration = 10.0     # Duration in seconds
+duration = 200.0     # Duration in seconds
 freq = 200.0        # Frequency of the sine wave in Hz
 amplitude = 0.3     # Amplitude (0–1 range)
 
@@ -18,5 +18,5 @@ signal = amplitude * np.sin(2 * np.pi * freq * t)
 # ---------------------------------------
 # Save to WAV file
 # ---------------------------------------
-sf.write("sine_200Hz.wav", signal, fs)
+sf.write("sine_200Hz200s.wav", signal, fs)
 print(" 'sine_200Hz.wav' has been created successfully.")
