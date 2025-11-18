@@ -31,6 +31,27 @@ class DeviceDto {
       isCalibrated: json['is_calibrated'] as bool? ?? false,
     );
   }
+  DeviceDto copyWith({
+    int? id,
+    int? userId,
+    String? deviceId,
+    String? deviceName,
+    String? deviceType,
+    bool? isConnected,
+    String? connectionType,
+    bool? isCalibrated,
+  }) {
+    return DeviceDto(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      deviceId: deviceId ?? this.deviceId,
+      deviceName: deviceName ?? this.deviceName,
+      deviceType: deviceType ?? this.deviceType,
+      isConnected: isConnected ?? this.isConnected,
+      connectionType: connectionType ?? this.connectionType,
+      isCalibrated: isCalibrated ?? this.isCalibrated,
+    );
+  }
 }
 
 class DiscoveredDevice {
@@ -39,6 +60,7 @@ class DiscoveredDevice {
   final String deviceType;
   final String connectionType;
   final int? signalStrength;
+  final String? ipAddress;
 
   const DiscoveredDevice({
     required this.deviceId,
@@ -46,6 +68,7 @@ class DiscoveredDevice {
     required this.deviceType,
     required this.connectionType,
     this.signalStrength,
+    this.ipAddress,
   });
 
   factory DiscoveredDevice.fromJson(Map<String, dynamic> json) {
@@ -55,6 +78,7 @@ class DiscoveredDevice {
       deviceType: json['device_type'] as String? ?? 'speaker',
       connectionType: json['connection_type'] as String? ?? 'wifi',
       signalStrength: json['signal_strength'] as int?,
+      ipAddress: json['ip_address'] as String?,
     );
   }
 }

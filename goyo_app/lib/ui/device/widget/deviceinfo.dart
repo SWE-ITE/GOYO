@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:goyo_app/ui/device/devicemanager_page.dart';
+import 'package:goyo_app/data/models/device_models.dart';
 
 class DeviceInfo extends StatelessWidget {
-  final AudioDevice device;
+  final DeviceDto device;
   const DeviceInfo({super.key, required this.device});
 
   Future<void> _confirmDelete(BuildContext context) async {
@@ -10,7 +10,9 @@ class DeviceInfo extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Delete device'),
-        content: Text('Delete "${device.name}"? This action cannot be undone.'),
+        content: Text(
+          'Delete "${device.deviceName}"? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -33,7 +35,8 @@ class DeviceInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isConn = device.status == DeviceStatus.connected;
+    final isConn = device.isConnected;
+    final isMic = device.deviceType.toLowerCase().contains('mic');
 
     return Scaffold(
       appBar: AppBar(title: const Text('Device Info')),
@@ -44,25 +47,30 @@ class DeviceInfo extends StatelessWidget {
             leading: CircleAvatar(
               backgroundColor: cs.primary.withOpacity(.12),
               child: Icon(
-                device.kind == DeviceKind.mic
-                    ? Icons.mic
-                    : Icons.speaker_outlined,
+                isMic ? Icons.mic : Icons.speaker_outlined,
                 color: cs.primary,
               ),
             ),
             title: Text(
-              device.name,
+              device.deviceName,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             subtitle: Text(isConn ? 'Connected' : 'Not Connected'),
           ),
           const Divider(),
-          ListTile(title: const Text('Device ID'), subtitle: Text(device.id)),
+          ListTile(
+            title: const Text('Device ID'),
+            subtitle: Text(
+              device.deviceId.isEmpty ? '#${device.id}' : device.deviceId,
+            ),
+          ),
           ListTile(
             title: const Text('Type'),
-            subtitle: Text(
-              device.kind == DeviceKind.mic ? 'Microphone' : 'Speaker',
-            ),
+            subtitle: Text(isMic ? 'Microphone' : 'Speaker'),
+          ),
+          ListTile(
+            title: const Text('Connection'),
+            subtitle: Text(device.connectionType.toUpperCase()),
           ),
           const SizedBox(height: 16),
           Row(
