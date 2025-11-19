@@ -16,8 +16,8 @@ class _HomePageState extends State<HomePage> {
 
   late final List<Widget> _tabs = const [
     DeviceManager(),
-    HomeTab(), // ✅ ANC 토글 + 소음 규칙 리스트
-    ProfilePage(), // ✅ 프로필
+    HomeTab(), //
+    ProfilePage(), //
   ];
 
   static const _titles = ['Device Manager', 'Home', 'Profile'];

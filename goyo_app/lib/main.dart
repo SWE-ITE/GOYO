@@ -52,7 +52,7 @@ class GoyoApp extends StatelessWidget {
         initialRoute: '/login',
         routes: {
           '/login': (_) => const LoginPage(),
-          '/home': (_) => const HomePage(), // HomePage(initialIndex: 1) 가능
+          '/home': (_) => const HomePage(),
           '/profile': (_) => const ProfilePage(),
           '/signup': (_) => const SignUpPage(),
         },
