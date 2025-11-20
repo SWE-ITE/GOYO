@@ -13,6 +13,7 @@ from config import settings
 from audio_processor import AudioProcessor
 from redis_client import RedisClient
 from anc_controller import ANCController
+from mqtt_publisher import mqtt_publisher
 
 # Logging setup
 logging.basicConfig(
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="GOYO AI Server",
     description="Real-time audio processing and Active Noise Control",
-    version="1.0.0"
+    version="3.5.0"
 )
 
 # CORS
@@ -50,19 +51,26 @@ active_connections: Dict[str, WebSocket] = {}
 async def startup_event():
     """서버 시작 시 초기화"""
     logger.info("🚀 GOYO AI Server starting...")
-    
+
+    # MQTT Publisher 연결
+    try:
+        mqtt_publisher.connect()
+        logger.info("✅ MQTT Publisher connected")
+    except Exception as e:
+        logger.error(f"❌ MQTT Publisher connection failed: {e}")
+
     # Redis 연결
     await redis_client.connect()
     logger.info("✅ Redis connected")
-    
+
     # Redis Pub/Sub 리스너 시작 (제어 명령용)
     asyncio.create_task(redis_audio_listener())
     logger.info("✅ Redis control listener started")
-    
+
     # Audio Processor 초기화
     audio_processor.initialize()
     logger.info("✅ Audio Processor initialized")
-    
+
     logger.info("🎉 GOYO AI Server ready!")
 
 
@@ -70,7 +78,14 @@ async def startup_event():
 async def shutdown_event():
     """서버 종료 시 정리"""
     logger.info("🛑 GOYO AI Server shutting down...")
-    
+
+    # MQTT Publisher 연결 해제
+    try:
+        mqtt_publisher.disconnect()
+        logger.info("✅ MQTT Publisher disconnected")
+    except Exception as e:
+        logger.error(f"❌ MQTT Publisher disconnect error: {e}")
+
     await redis_client.disconnect()
     audio_processor.cleanup()
     

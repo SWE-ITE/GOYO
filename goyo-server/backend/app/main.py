@@ -2,6 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import auth, devices, profile, audio
 from app.database import engine, Base
+from app.services.mqtt_service import mqtt_service
+import logging
+
+# Logging 설정
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -9,7 +18,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="GOYO Backend API",
     description="AI-Based Active Noise Control System",
-    version="3.0.0"
+    version="3.5.0"
 )
 
 # CORS
@@ -37,7 +46,33 @@ def root():
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy"}
+    return {
+        "status": "healthy",
+        "mqtt_connected": mqtt_service.is_connected
+    }
+
+
+@app.on_event("startup")
+async def startup_event():
+    """애플리케이션 시작 시 MQTT 서비스 연결"""
+    logger.info("🚀 Starting GOYO Backend...")
+    try:
+        mqtt_service.connect()
+        logger.info("✅ MQTT Service initialized")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize MQTT Service: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """애플리케이션 종료 시 MQTT 서비스 연결 해제"""
+    logger.info("🛑 Shutting down GOYO Backend...")
+    try:
+        mqtt_service.disconnect()
+        logger.info("✅ MQTT Service stopped")
+    except Exception as e:
+        logger.error(f"❌ Error stopping MQTT Service: {e}")
+
 
 if __name__ == "__main__":
     import uvicorn
