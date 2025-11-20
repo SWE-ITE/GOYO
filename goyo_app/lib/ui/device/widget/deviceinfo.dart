@@ -36,7 +36,8 @@ class DeviceInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isConn = device.isConnected;
-    final isMic = device.deviceType.toLowerCase().contains('mic');
+    final icon = _iconForType(device.deviceType);
+    final typeLabel = _deviceTypeLabel(device.deviceType);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Device Info')),
@@ -46,10 +47,7 @@ class DeviceInfo extends StatelessWidget {
           ListTile(
             leading: CircleAvatar(
               backgroundColor: cs.primary.withOpacity(.12),
-              child: Icon(
-                isMic ? Icons.mic : Icons.speaker_outlined,
-                color: cs.primary,
-              ),
+              child: Icon(icon, color: cs.primary),
             ),
             title: Text(
               device.deviceName,
@@ -64,10 +62,7 @@ class DeviceInfo extends StatelessWidget {
               device.deviceId.isEmpty ? '#${device.id}' : device.deviceId,
             ),
           ),
-          ListTile(
-            title: const Text('Type'),
-            subtitle: Text(isMic ? 'Microphone' : 'Speaker'),
-          ),
+          ListTile(title: const Text('Type'), subtitle: Text(typeLabel)),
           ListTile(
             title: const Text('Connection'),
             subtitle: Text(device.connectionType.toUpperCase()),
@@ -102,5 +97,35 @@ class DeviceInfo extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+IconData _iconForType(String type) {
+  switch (type) {
+    case 'refrigerator':
+      return Icons.kitchen;
+    case 'tv':
+      return Icons.tv;
+    case 'robot_cleaner':
+      return Icons.cleaning_services;
+    case 'smart_chair':
+      return Icons.event_seat;
+    default:
+      return Icons.devices_other;
+  }
+}
+
+String _deviceTypeLabel(String type) {
+  switch (type) {
+    case 'refrigerator':
+      return '냉장고';
+    case 'tv':
+      return 'TV';
+    case 'robot_cleaner':
+      return '로봇 청소기';
+    case 'smart_chair':
+      return '스마트 의자';
+    default:
+      return type;
   }
 }
