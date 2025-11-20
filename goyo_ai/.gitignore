@@ -1,18 +1,18 @@
-checkpoints/
 Dataset/
 
-# Python 가상환경
+audioset_tagging_cnn/
+YAMNet/
+
+checkpoints/
+*.pth
+*.keras
+*.h5
+
 venv/
 __pycache__/
 *.pyc
-
-# OS/IDE 파일
 .DS_Store
 .vscode/
 
-# 모델 가중치 파일 (안전장치)
-*.h5
-*.keras
-
-yamnet/
-saved_model.db
+PANNs_test.py
+YAMNet_test.py

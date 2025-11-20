@@ -11,12 +11,12 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from session_utils import create_controller, play_reference
+from .session_utils import create_controller, play_reference
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-REFERENCE_PATH = Path(__file__).resolve().parent / "src/sine_200Hz.wav"
+REFERENCE_PATH = "src/sine_200Hz.wav"
 SECONDARY_PATH = Path(__file__).resolve().parent / "secondary_path.npy"
 
 CONTROL_DEVICE = 3

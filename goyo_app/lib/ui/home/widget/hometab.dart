@@ -11,21 +11,12 @@ class HomeTab extends StatefulWidget {
 }
 
 class _HomeTabState extends State<HomeTab> {
-  bool ancOn = false;
+  bool ancOn = true;
 
   final List<NoiseRule> rules = [
-    NoiseRule(
-      title: 'Low-frequency hum',
-      icon: Icons.vibration,
-      controllNoise: 45,
-      enabled: true,
-    ),
-    NoiseRule(
-      title: 'Fan noise',
-      icon: Icons.toys,
-      controllNoise: 50,
-      enabled: false,
-    ),
+    NoiseRule(title: '냉장고 소리', icon: Icons.kitchen, enabled: true),
+    NoiseRule(title: '에어컨 소리', icon: Icons.ac_unit, enabled: true),
+    NoiseRule(title: '선풍기 소리', icon: Icons.wind_power, enabled: false),
   ];
 
   @override
@@ -54,15 +45,17 @@ class _HomeTabState extends State<HomeTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Active Noise Control',
+                        ancOn ? 'ANC ENABLED' : 'ANC DISABLED',
                         style: TextStyle(
+                          color: ancOn ? cs.primary : cs.onSurfaceVariant,
                           fontWeight: FontWeight.w700,
-                          color: cs.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        ancOn ? 'ANC is ON' : 'ANC is OFF',
+                        ancOn
+                            ? 'Noise cancelling is active across your devices.'
+                            : 'Toggle on to activate ambient noise control.',
                         style: TextStyle(color: cs.onSurfaceVariant),
                       ),
                     ],
@@ -75,34 +68,6 @@ class _HomeTabState extends State<HomeTab> {
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-
-        // 소음 규칙 리스트
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Noise List',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: cs.onSurface,
-              ),
-            ),
-            if (isFocus) ...[
-              const SizedBox(width: 8),
-              const Icon(Icons.lock, size: 16, color: Colors.red),
-              const SizedBox(width: 4),
-              const Text(
-                'FOCUS MODE',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ],
         ),
         if (isFocus)
           Padding(
@@ -119,99 +84,34 @@ class _HomeTabState extends State<HomeTab> {
             rule: r,
             locked: isFocus,
             onToggle: (e) => setState(() => r.enabled = e),
-            onEdit: () => _editRule(r),
             onDelete: () => setState(() => rules.remove(r)),
+            onRename: (name) => setState(() => r.title = name),
           ),
         ),
       ],
     );
   }
-
-  void _editRule(NoiseRule r) async {
-    final controller = TextEditingController(text: r.controllNoise.toString());
-    final cs = Theme.of(context).colorScheme;
-    await showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Edit "${r.title}"',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: cs.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'controllNoise',
-                hintText: 'e.g., 50',
-                prefixIcon: Icon(Icons.graphic_eq),
-              ),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () {
-                // 바텀시트 Save 버튼
-                final v = int.tryParse(controller.text.trim());
-                if (v != null) {
-                  setState(() => r.controllNoise = v.clamp(0, 100));
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
-class _NoiseRuleTile extends StatefulWidget {
+class _NoiseRuleTile extends StatelessWidget {
   final NoiseRule rule;
   final bool locked;
   final ValueChanged<bool> onToggle;
-  final VoidCallback onEdit;
   final VoidCallback onDelete;
-
-  // (선택) 외부에도 값 변경 통지하고 싶으면 콜백 추가 가능
-  final ValueChanged<int>? onIntensityChanged;
+  final ValueChanged<String> onRename;
 
   const _NoiseRuleTile({
     required this.rule,
     required this.onToggle,
-    required this.onEdit,
     required this.onDelete,
-    this.onIntensityChanged,
+    required this.onRename,
     this.locked = false,
   });
 
   @override
-  State<_NoiseRuleTile> createState() => _NoiseRuleTileState();
-}
-
-class _NoiseRuleTileState extends State<_NoiseRuleTile> {
-  late int _intensity; // 0~100
-
-  @override
-  void initState() {
-    super.initState();
-    _intensity = (widget.rule.controllNoise).clamp(0, 100);
-  }
-
-  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final disabled = widget.locked;
+    final disabled = locked;
 
     return Card(
       child: Padding(
@@ -222,11 +122,11 @@ class _NoiseRuleTileState extends State<_NoiseRuleTile> {
             // 상단 행: 아이콘 + 제목 + 액션들
             Row(
               children: [
-                Icon(widget.rule.icon, color: cs.primary),
+                Icon(rule.icon, color: cs.primary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    widget.rule.title,
+                    rule.title,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: cs.onSurface,
@@ -234,76 +134,72 @@ class _NoiseRuleTileState extends State<_NoiseRuleTile> {
                   ),
                 ),
                 IconButton(
-                  onPressed: widget.onEdit,
+                  onPressed: locked
+                      ? null
+                      : () => _promptRename(context, rule.title),
                   icon: const Icon(Icons.edit_outlined),
-                  tooltip: 'Edit rule',
+                  tooltip: 'Rename rule',
                 ),
                 IconButton(
-                  onPressed: widget.onDelete,
+                  onPressed: locked ? null : onDelete,
                   icon: const Icon(Icons.delete_outline),
                   tooltip: 'Delete rule',
                 ),
                 Switch(
-                  value: widget.rule.enabled,
-                  onChanged: disabled ? null : widget.onToggle,
+                  value: rule.enabled,
+                  onChanged: disabled ? null : onToggle,
                 ),
               ],
-            ),
-
-            const SizedBox(height: 8),
-
-            // 슬라이더 라벨
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Reduction intensity',
-                  style: TextStyle(color: cs.onSurfaceVariant),
-                ),
-                Text(
-                  '$_intensity %',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurface,
-                  ),
-                ),
-              ],
-            ),
-
-            // 슬라이더 본체
-            Slider.adaptive(
-              value: _intensity.toDouble(),
-              min: 0,
-              max: 100,
-              divisions: 20,
-              onChanged: disabled
-                  ? null
-                  : (v) => setState(() => _intensity = v.round()),
-              onChangeEnd: disabled
-                  ? null
-                  : (v) {
-                      final val = v.round();
-                      widget.rule.controllNoise = val;
-                      widget.onIntensityChanged?.call(val);
-                    },
             ),
           ],
         ),
       ),
     );
   }
+
+  Future<void> _promptRename(BuildContext context, String current) async {
+    final controller = TextEditingController(text: current);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Rename noise rule'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Rule name',
+              hintText: '예) 공기청정기 소리',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final trimmed = controller.text.trim();
+                if (trimmed.isEmpty) return;
+                Navigator.pop(context, trimmed);
+              },
+              child: const Text('저장'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result.isNotEmpty) {
+      onRename(result);
+    }
+  }
 }
 
 class NoiseRule {
-  NoiseRule({
-    required this.title,
-    required this.icon,
-    int? controllNoise, // <- nullable로 받고
-    required this.enabled,
-  }) : controllNoise = (controllNoise ?? 50).clamp(0, 100); // <- 기본/범위 보정
+  NoiseRule({required this.title, required this.icon, required this.enabled});
 
   String title;
   IconData icon;
-  int controllNoise;
   bool enabled;
 }

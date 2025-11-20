@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 enum AncMode { normal, focus }
@@ -28,7 +27,7 @@ class NoiseRuleModel {
 }
 
 class AncStore extends ChangeNotifier {
-  // 사용자 이름
+  
   String userName;
   AncStore({String? initialUserName})
     : userName = (initialUserName?.trim().isNotEmpty ?? false)

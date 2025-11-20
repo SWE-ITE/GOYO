@@ -68,7 +68,6 @@ class _LoginPageState extends State<LoginPage> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Form(
-              // ✅ 여기!
               key: _formKey,
               autovalidateMode: AutovalidateMode.onUserInteraction,
               child: ConstrainedBox(
@@ -155,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
                     TextButton(
                       onPressed: loading
                           ? null
-                          : () => Navigator.of(context).pushNamed('/signup'),
+                          : () => Navigator.of(context).pushNamed('/recover'),
                       child: const Text('ID/PW 찾기'),
                     ),
                   ],
