@@ -11,7 +11,7 @@ class HomeTab extends StatefulWidget {
 }
 
 class _HomeTabState extends State<HomeTab> {
-  bool ancOn = false;
+  bool ancOn = true;
 
   final List<NoiseRule> rules = [
     NoiseRule(title: '냉장고 소리', icon: Icons.kitchen, enabled: true),
@@ -40,12 +40,30 @@ class _HomeTabState extends State<HomeTab> {
                   child: Icon(Icons.hearing, color: cs.primary),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'FOCUS MODE',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ancOn ? 'ANC ENABLED' : 'ANC DISABLED',
+                        style: TextStyle(
+                          color: ancOn ? cs.primary : cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        ancOn
+                            ? 'Noise cancelling is active across your devices.'
+                            : 'Toggle on to activate ambient noise control.',
+                        style: TextStyle(color: cs.onSurfaceVariant),
+                      ),
+                    ],
                   ),
+                ),
+                Switch(
+                  value: ancOn,
+                  onChanged: (v) => setState(() => ancOn = v),
                 ),
               ],
             ),
@@ -67,6 +85,7 @@ class _HomeTabState extends State<HomeTab> {
             locked: isFocus,
             onToggle: (e) => setState(() => r.enabled = e),
             onDelete: () => setState(() => rules.remove(r)),
+            onRename: (name) => setState(() => r.title = name),
           ),
         ),
       ],
@@ -79,11 +98,13 @@ class _NoiseRuleTile extends StatelessWidget {
   final bool locked;
   final ValueChanged<bool> onToggle;
   final VoidCallback onDelete;
+  final ValueChanged<String> onRename;
 
   const _NoiseRuleTile({
     required this.rule,
     required this.onToggle,
     required this.onDelete,
+    required this.onRename,
     this.locked = false,
   });
 
@@ -113,7 +134,14 @@ class _NoiseRuleTile extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: onDelete,
+                  onPressed: locked
+                      ? null
+                      : () => _promptRename(context, rule.title),
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Rename rule',
+                ),
+                IconButton(
+                  onPressed: locked ? null : onDelete,
                   icon: const Icon(Icons.delete_outline),
                   tooltip: 'Delete rule',
                 ),
@@ -127,6 +155,44 @@ class _NoiseRuleTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _promptRename(BuildContext context, String current) async {
+    final controller = TextEditingController(text: current);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Rename noise rule'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Rule name',
+              hintText: '예) 공기청정기 소리',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final trimmed = controller.text.trim();
+                if (trimmed.isEmpty) return;
+                Navigator.pop(context, trimmed);
+              },
+              child: const Text('저장'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result.isNotEmpty) {
+      onRename(result);
+    }
   }
 }
 

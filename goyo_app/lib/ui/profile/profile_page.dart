@@ -35,6 +35,61 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
+  Future<void> _showNoiseLogs(BuildContext context) async {
+    final cs = Theme.of(context).colorScheme;
+    final logs = [
+      const ('08:05', 'Kitchen fan suppressed automatically (45%)'),
+      const ('12:22', 'Living room TV limited during call mode'),
+      const ('19:40', 'Smart chair adjusted comfort ANC profile'),
+      const ('22:10', 'Quiet hours restored preferred rules'),
+    ];
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.insights_outlined, color: cs.primary),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Noise map logs',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Data logs of noise patterns and device usage history',
+              ),
+              const SizedBox(height: 12),
+              ...logs.map(
+                (log) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: cs.primary.withOpacity(.12),
+                    child: Icon(Icons.schedule, color: cs.primary),
+                  ),
+                  title: Text(log.$2),
+                  subtitle: Text(log.$1),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -230,22 +285,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 8),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Suppression intensity'),
-                      subtitle: Slider(
-                        value: anc.intensity,
-                        onChanged: (v) =>
-                            context.read<AncStore>().setIntensity(v),
-                        min: 0.0,
-                        max: 1.0,
+                      leading: CircleAvatar(
+                        backgroundColor: cs.primary.withOpacity(.12),
+                        child: Icon(Icons.map_outlined, color: cs.primary),
                       ),
-                      trailing: Text('${(anc.intensity * 100).round()}%'),
+                      title: const Text('Noise map'),
+                      subtitle: const Text(
+                        'Data logs of noise patterns and device usage history',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showNoiseLogs(context),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      anc.mode == AncMode.focus
-                          ? '※ 집중모드에서는 홈의 모든 노이즈 규칙이 자동으로 ON이며 강도도 최대입니다.'
-                          : '※ 일반모드에서는 사용자가 켠 규칙만 적용됩니다.',
-                      style: TextStyle(color: cs.onSurfaceVariant),
+                    const Text(
+                      'Tap to review recent noise patterns and how your devices reacted.',
                     ),
                   ],
                 ),

@@ -164,7 +164,6 @@ class _DeviceManagerPageState extends State<DeviceManager> {
           deviceName: 'Smart Chair',
           deviceType: 'smart_chair',
           connectionType: 'wifi',
-          signalStrength: -42,
           ipAddress: '192.168.0.120',
         ),
       ];
