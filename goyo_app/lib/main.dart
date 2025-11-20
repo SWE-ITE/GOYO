@@ -7,6 +7,7 @@ import 'package:goyo_app/ui/login/login_page.dart';
 import 'package:goyo_app/ui/login/signup_page.dart';
 import 'package:goyo_app/ui/profile/profile_page.dart';
 import 'package:provider/provider.dart';
+import 'package:goyo_app/ui/login/recovery_page.dart';
 import 'theme/app_theme.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -55,6 +56,7 @@ class GoyoApp extends StatelessWidget {
           '/home': (_) => const HomePage(),
           '/profile': (_) => const ProfilePage(),
           '/signup': (_) => const SignUpPage(),
+          '/recover': (_) => const AccountRecoveryPage(),
         },
       ),
     );
