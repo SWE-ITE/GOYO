@@ -11,12 +11,10 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from session_utils import create_controller, play_reference
+from .session_utils import create_controller, play_reference
 
-# ---------------------------------------------------------------------------
 # Configuration
-# ---------------------------------------------------------------------------
-REFERENCE_PATH = Path(__file__).resolve().parent / "src/sine_200Hz.wav"
+REFERENCE_PATH = "src/sine_200Hz.wav"
 SECONDARY_PATH = Path(__file__).resolve().parent / "secondary_path.npy"
 
 CONTROL_DEVICE = 3
@@ -30,8 +28,6 @@ FILTER_LENGTH: Optional[int] = None
 
 REFERENCE_PREVIEW_SECONDS = 3.0
 ANC_DURATION: Optional[float] = None  # None = run until Ctrl+C after preview
-# ---------------------------------------------------------------------------
-
 
 def play_reference_preview() -> None:
     play_reference(

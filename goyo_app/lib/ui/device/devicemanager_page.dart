@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:goyo_app/data/models/device_models.dart';
-import 'package:goyo_app/data/services/api_service.dart';
 import 'package:goyo_app/ui/device/widget/deviceinfo.dart';
 
 class DeviceManager extends StatefulWidget {
@@ -11,7 +10,39 @@ class DeviceManager extends StatefulWidget {
 }
 
 class _DeviceManagerPageState extends State<DeviceManager> {
-  final ApiService _api = ApiService();
+  static const List<DeviceDto> _demoDevices = [
+    DeviceDto(
+      id: 1,
+      userId: 1,
+      deviceId: 'fridge-01',
+      deviceName: '스마트 냉장고',
+      deviceType: 'refrigerator',
+      isConnected: true,
+      connectionType: 'wifi',
+      isCalibrated: true,
+    ),
+    DeviceDto(
+      id: 2,
+      userId: 1,
+      deviceId: 'tv-01',
+      deviceName: '거실 TV',
+      deviceType: 'tv',
+      isConnected: false,
+      connectionType: 'wifi',
+      isCalibrated: true,
+    ),
+    DeviceDto(
+      id: 3,
+      userId: 1,
+      deviceId: 'robot-01',
+      deviceName: '로봇 청소기',
+      deviceType: 'robot_cleaner',
+      isConnected: true,
+      connectionType: 'wifi',
+      isCalibrated: false,
+    ),
+  ];
+
   bool scanning = false;
   bool _initialLoading = true;
   List<DeviceDto> _devices = const [];
@@ -19,20 +50,16 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   @override
   void initState() {
     super.initState();
-    _fetchDevices();
+    _loadDemoDevices();
   }
 
-  Future<void> _fetchDevices() async {
-    setState(() => _initialLoading = true);
-    try {
-      final items = await _api.getDevices();
-      if (!mounted) return;
-      setState(() => _devices = items);
-    } catch (e) {
-      _showSnack('기기에 접근할 수 없습니다: $e', isError: true);
-    } finally {
-      if (mounted) setState(() => _initialLoading = false);
-    }
+  Future<void> _loadDemoDevices() async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
+    setState(() {
+      _devices = List<DeviceDto>.from(_demoDevices);
+      _initialLoading = false;
+    });
   }
 
   @override
@@ -74,12 +101,10 @@ class _DeviceManagerPageState extends State<DeviceManager> {
                       itemBuilder: (context, i) {
                         final d = _devices[i];
                         final isConn = d.isConnected;
-                        final isMic = d.deviceType.toLowerCase().contains(
-                          'mic',
-                        );
+
                         return ListTile(
                           leading: Icon(
-                            isMic ? Icons.mic : Icons.speaker_outlined,
+                            _iconForType(d.deviceType),
                             color: cs.primary,
                           ),
                           title: Text(
@@ -124,27 +149,32 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   Future<void> _scanDevices() async {
     setState(() => scanning = true);
     try {
-      final found = await _api.discoverWifiDevices();
+      await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return;
-      final pairedIds = _devices.map((d) => d.deviceId).toSet();
-      final available = found
-          .where((d) => !pairedIds.contains(d.deviceId))
-          .toList();
 
-      if (available.isEmpty) {
-        _showSnack('연결 가능한 Wi-Fi 디바이스를 찾지 못했습니다.');
+      final alreadyAdded = _devices.any((d) => d.deviceId == 'smart-chair-01');
+      if (alreadyAdded) {
+        _showSnack('스마트 의자가 이미 연결되어 있습니다.');
         return;
       }
 
+      final available = [
+        const DiscoveredDevice(
+          deviceId: 'smart-chair-01',
+          deviceName: 'Smart Chair',
+          deviceType: 'smart_chair',
+          connectionType: 'wifi',
+          ipAddress: '192.168.0.120',
+        ),
+      ];
+
       final selected = await _showDiscoveryDialog(available);
       if (selected == null) {
-        _showSnack('연결 가능한 디바이스가 있습니다. 언제든 다시 시도하세요.');
+        _showSnack('스마트 의자 연결을 취소했어요.');
         return;
       }
 
       await _pairDevice(selected);
-    } catch (e) {
-      _showSnack('스캔 중 오류가 발생했습니다: $e', isError: true);
     } finally {
       if (mounted) setState(() => scanning = false);
     }
@@ -158,32 +188,25 @@ class _DeviceManagerPageState extends State<DeviceManager> {
       barrierDismissible: false,
       builder: (_) => progress,
     );
-    try {
-      final paired = await _api.pairDevice(
-        PairDeviceRequest(
-          deviceId: device.deviceId,
-          deviceName: device.deviceName,
-          deviceType: device.deviceType,
-          connectionType: device.connectionType,
-        ),
+
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+    setState(() {
+      final nextId = _nextDeviceId();
+      final paired = DeviceDto(
+        id: nextId,
+        userId: 1,
+        deviceId: device.deviceId,
+        deviceName: device.deviceName,
+        deviceType: device.deviceType,
+        isConnected: true,
+        connectionType: device.connectionType,
+        isCalibrated: true,
       );
-      if (!mounted) return;
-      setState(() {
-        final idx = _devices.indexWhere((d) => d.id == paired.id);
-        if (idx == -1) {
-          _devices = [..._devices, paired];
-        } else {
-          final updated = List<DeviceDto>.from(_devices);
-          updated[idx] = paired;
-          _devices = updated;
-        }
-      });
-      _showSnack('"${paired.deviceName}" Wi-Fi 연결이 완료되었습니다.');
-    } catch (e) {
-      _showSnack('연결에 실패했습니다: $e', isError: true);
-    } finally {
-      if (navigator.canPop()) navigator.pop();
-    }
+      _devices = [..._devices, paired];
+    });
+    _showSnack('"${device.deviceName}"이(가) 연결되었습니다.');
+    if (navigator.canPop()) navigator.pop();
   }
 
   Future<void> _handleDeviceTap(DeviceDto device) async {
@@ -287,7 +310,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   }
 
   String _buildDiscoverySubtitle(DiscoveredDevice device) {
-    final parts = <String>[device.deviceType];
+    final parts = <String>[_deviceTypeLabel(device.deviceType)];
     if (device.signalStrength != null) {
       parts.add('${device.signalStrength} dBm');
     }
@@ -296,6 +319,45 @@ class _DeviceManagerPageState extends State<DeviceManager> {
       parts.add(ip);
     }
     return parts.join(' • ');
+  }
+
+  int _nextDeviceId() {
+    if (_devices.isEmpty) return 1;
+    int maxId = _devices.first.id;
+    for (final d in _devices.skip(1)) {
+      if (d.id > maxId) maxId = d.id;
+    }
+    return maxId + 1;
+  }
+
+  IconData _iconForType(String type) {
+    switch (type) {
+      case 'refrigerator':
+        return Icons.kitchen;
+      case 'tv':
+        return Icons.tv;
+      case 'robot_cleaner':
+        return Icons.cleaning_services;
+      case 'smart_chair':
+        return Icons.event_seat;
+      default:
+        return Icons.devices_other;
+    }
+  }
+
+  String _deviceTypeLabel(String type) {
+    switch (type) {
+      case 'refrigerator':
+        return '냉장고';
+      case 'tv':
+        return 'TV';
+      case 'robot_cleaner':
+        return '로봇 청소기';
+      case 'smart_chair':
+        return '스마트 의자';
+      default:
+        return type;
+    }
   }
 
   AlertDialog _buildProgressDialog(String message) {

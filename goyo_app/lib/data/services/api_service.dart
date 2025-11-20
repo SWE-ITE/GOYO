@@ -1,4 +1,4 @@
-// lib/data/services/api_service.dart
+import 'dart:developer' as dev;
 import 'package:dio/dio.dart';
 import 'package:goyo_app/core/config/env.dart';
 import 'package:goyo_app/core/auth/token_manager.dart';
@@ -21,9 +21,31 @@ class ApiService {
       InterceptorsWrapper(
         onRequest: (o, h) async {
           final t = await TokenManager.getToken();
-          if (t != null && t.isNotEmpty)
+          if (t != null && t.isNotEmpty) {
             o.headers['Authorization'] = 'Bearer $t';
+          }
+          dev.log(
+            '➡️  [${o.method}] ${o.baseUrl}${o.path}',
+            name: 'ApiService',
+          );
           h.next(o);
+        },
+        onResponse: (res, h) {
+          final request = res.requestOptions;
+          dev.log(
+            '✅  [${request.method}] ${request.baseUrl}${request.path} (${res.statusCode})',
+            name: 'ApiService',
+          );
+          h.next(res);
+        },
+        onError: (err, h) {
+          final request = err.requestOptions;
+          dev.log(
+            '❌  [${request.method}] ${request.baseUrl}${request.path} (${err.response?.statusCode ?? 'NO_RESPONSE'})',
+            name: 'ApiService',
+            error: err.message,
+          );
+          h.next(err);
         },
       ),
     );
@@ -91,7 +113,6 @@ class LoginResult {
   const LoginResult({required this.access, this.refresh, this.expires});
 }
 
-// lib/data/services/api_service.dart
 extension AuthApi on ApiService {
   Future<void> signup({
     required String email,

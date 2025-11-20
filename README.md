@@ -14,6 +14,11 @@ This research aims to demonstrate how AI sound classification and predictive mod
 
 ---
 
+## System Architecture
+![GOYO System Architecture](./documents/GOYO_System_Architecture.png)
+
+---
+
 ## Team Members  
 
 | Name | Organization | Email |

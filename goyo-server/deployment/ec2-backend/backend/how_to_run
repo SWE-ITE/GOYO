@@ -1,0 +1,21 @@
+######################################
+# 🚀 GOYO FastAPI 서버 실행 가이드 (Mac) #
+######################################
+
+# 1️⃣ Python 가상환경 생성 및 활성화
+python3.10 -m venv ~/venv/goyo
+source ~/venv/goyo/bin/activate
+
+# 2️⃣ Docker 컨테이너 실행 (DB 등 백엔드 서비스)
+docker-compose up -d
+
+# 3️⃣ PyAudio 의존 라이브러리 설치
+brew install portaudio
+
+# 4️⃣ Python 패키지 설치
+pip install -r requirements.txt
+
+# 5️⃣ FastAPI 서버 실행
+uvicorn app.main:app --reload
+
+# 6️⃣ Swagger UI 접속: http://localhost:8000/docs

@@ -1,17 +1,3 @@
-"""
-FxLMS-based Active Noise Control helper.
-
-This module streams a prerecorded noise track, computes an anti-noise signal
-with the filtered-x LMS algorithm, and plays the anti-noise through a speaker
-while adapting the control filter using feedback from an error microphone that
-is positioned at the listener's ear location.
-
-The implementation favours clarity over raw performance so you can iterate on
-the DSP without diving into C extensions. The core loop operates on short
-blocks (default: 256 samples) and keeps per-sample state to perform the
-filtered-x weight updates.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -40,6 +26,8 @@ class AncMetrics:
     frame_index: int
     error_rms: float
     step_size: float
+    reference_rms: float
+    output_rms: float
 
 
 def read_mono_wav(path: str) -> Tuple[np.ndarray, int]:
@@ -68,52 +56,7 @@ def read_mono_wav(path: str) -> Tuple[np.ndarray, int]:
 
 
 class FxLMSANC:
-    """
-    Filtered-x LMS controller for single-channel ANC.
-
-    Parameters
-    ----------
-    reference_path:
-        Optional WAV path for the prerecorded noise reference signal. Omit this
-        when providing ``reference_input_device_index`` for a live microphone
-        reference.
-    sample_rate:
-        Desired operating sample rate. If None, the reference file's rate is used.
-        Required when using a live reference microphone.
-    filter_length:
-        Number of taps in the adaptive control filter.
-    step_size:
-        LMS adaptation step. Smaller values converge slower but are safer.
-    block_size:
-        Number of samples per processing block.
-    secondary_path:
-        FIR coefficients modelling the speaker→error mic transfer function.
-        Provide a 1-D NumPy array. If omitted, an identity path is used.
-    control_device_index:
-        PyAudio output device index for the anti-noise signal (speaker near user).
-    record_device_index:
-        Optional PyAudio input device index.
-    reference_device_index:
-        Optional PyAudio output device index for the primary noise playback.
-        Provide this when you need to feed the original noise into a separate
-        loudspeaker. If omitted and ``play_reference`` is True, the reference
-        signal is mixed into the control speaker instead (legacy behaviour).
-    reference_input_device_index:
-        PyAudio input device index for a live reference microphone. When
-        provided, the controller ignores ``reference_path`` and continuously
-        samples this device for the reference signal.
-    split_reference_channels:
-        When True, the control output is stereo with the reference on the left
-        channel and the anti-noise on the right channel. Use this to drive both
-        signals from a single physical speaker interface.
-    play_reference:
-        If True, the primary noise is audible. Either written to the dedicated
-        reference speaker (when ``reference_device_index`` is set) or mixed into
-        the control speaker output.
-    normalize_step:
-        If True, scales the step size by the energy of the filtered reference
-        each sample (NLMS variant of FxLMS).
-    """
+    """Adaptive ANC controller using the Filtered-x LMS algorithm."""
 
     def __init__(
         self,
@@ -127,13 +70,35 @@ class FxLMSANC:
         record_device_index: Optional[int] = None,
         reference_device_index: Optional[int] = None,
         reference_input_device_index: Optional[int] = None,
+        error_channel_index: int = 0,
+        reference_channel_index: Optional[int] = None,
         split_reference_channels: bool = False,
         play_reference: bool = False,
+        control_output_gain: float = 1.0,
+        control_output_channel: int = 0,
+        reference_output_channel: int = 0,
         normalize_step: bool = True,
+        require_reference: bool = True,
+        leakage: float = 1e-4,
+        manual_gain_mode: bool = False,
+        manual_gain: float = 0.0,
     ):
-        if reference_path is None and reference_input_device_index is None:
+        if (
+            reference_path is None
+            and reference_input_device_index is None
+            and reference_channel_index is None
+            and require_reference
+        ):
             raise ValueError(
-                "Provide reference_path or reference_input_device_index for live reference input."
+                "Provide reference_path or a live reference source (reference_input_device_index or reference_channel_index)."
+            )
+
+        if (
+            reference_input_device_index is not None
+            and reference_channel_index is not None
+        ):
+            raise ValueError(
+                "Specify either reference_input_device_index or reference_channel_index, not both."
             )
 
         self.block_size = block_size
@@ -142,9 +107,20 @@ class FxLMSANC:
         self.normalize_step = normalize_step
         self.play_reference = play_reference
         self.split_reference_channels = split_reference_channels
+        self.control_output_gain = control_output_gain
+        self.control_output_channel = control_output_channel
+        self.reference_output_channel = reference_output_channel
+        self.leakage = leakage
+        self.manual_gain_mode = manual_gain_mode
+        self.manual_gain = manual_gain
 
         self.reference_input_device_index = reference_input_device_index
-        self._live_reference = reference_input_device_index is not None
+        self.reference_channel_index = reference_channel_index
+        self.error_channel_index = error_channel_index
+        self._reference_from_record_stream = reference_channel_index is not None
+        self._live_reference = (
+            self.reference_input_device_index is not None or self._reference_from_record_stream
+        )
 
         if reference_path is not None:
             self.reference_signal, ref_rate = read_mono_wav(reference_path)
@@ -157,7 +133,7 @@ class FxLMSANC:
         else:
             if sample_rate is None:
                 raise ValueError(
-                    "sample_rate must be provided when using reference_input_device_index."
+                    "sample_rate must be provided when using a live reference microphone."
                 )
             self.sample_rate = sample_rate
             self.reference_signal = np.zeros(self.block_size, dtype=np.float32)
@@ -172,14 +148,19 @@ class FxLMSANC:
         if self.secondary_path.ndim != 1:
             raise ValueError("secondary_path must be a 1-D array")
 
+        if self._reference_from_record_stream and record_device_index is None:
+            raise ValueError(
+                "record_device_index is required when reference_channel_index is provided."
+            )
+
         self.control_device_index = control_device_index
         self.record_device_index = record_device_index
         self.reference_device_index = reference_device_index
-
-        if self._live_reference and self.reference_device_index is not None:
-            raise ValueError(
-                "reference_device_index cannot be used when reference_input_device_index is provided."
-            )
+        record_channel_count = max(
+            self.error_channel_index,
+            self.reference_channel_index if self.reference_channel_index is not None else -1,
+        )
+        self.record_channels = record_channel_count + 1
 
         if self.split_reference_channels and self.reference_device_index is not None:
             raise ValueError(
@@ -192,6 +173,9 @@ class FxLMSANC:
         self._input_stream = None
         self._reference_input_stream = None
         self._stop_requested = False
+        self._pending_reference_block: Optional[np.ndarray] = None
+        self._control_channels = 1
+        self._reference_channels = 1
 
         self._reset_state()
 
@@ -211,9 +195,11 @@ class FxLMSANC:
     def _open_streams(self) -> None:
         """Open PyAudio output and input streams."""
         if self._control_stream is None:
+            channels = 2 if self.split_reference_channels else max(1, self.control_output_channel + 1)
+            self._control_channels = channels
             self._control_stream = self._audio.open(
                 format=pyaudio.paFloat32,
-                channels=2 if self.split_reference_channels else 1,
+                channels=channels,
                 rate=self.sample_rate,
                 output=True,
                 frames_per_buffer=self.block_size,
@@ -226,9 +212,11 @@ class FxLMSANC:
             and not self.split_reference_channels
             and self._reference_stream is None
         ):
+            ref_channels = max(1, self.reference_output_channel + 1)
+            self._reference_channels = ref_channels
             self._reference_stream = self._audio.open(
                 format=pyaudio.paFloat32,
-                channels=1,
+                channels=ref_channels,
                 rate=self.sample_rate,
                 output=True,
                 frames_per_buffer=self.block_size,
@@ -238,14 +226,17 @@ class FxLMSANC:
         if self._input_stream is None:
             self._input_stream = self._audio.open(
                 format=pyaudio.paInt16,
-                channels=1,
+                channels=self.record_channels,
                 rate=self.sample_rate,
                 input=True,
                 frames_per_buffer=self.block_size,
                 input_device_index=self.record_device_index,
             )
 
-        if self._live_reference and self._reference_input_stream is None:
+        if (
+            self.reference_input_device_index is not None
+            and self._reference_input_stream is None
+        ):
             self._reference_input_stream = self._audio.open(
                 format=pyaudio.paInt16,
                 channels=1,
@@ -276,9 +267,38 @@ class FxLMSANC:
         if self._audio:
             self._audio.terminate()
 
+    def _read_input_frames(self) -> np.ndarray:
+        """Read and reshape a block of samples from the configured input device."""
+        if self._input_stream is None:
+            raise RuntimeError("Input stream is not open.")
+        raw = self._input_stream.read(self.block_size, exception_on_overflow=False)
+        frames = np.frombuffer(raw, dtype=np.int16).astype(np.float32)
+        frames /= 32768.0
+        frames = frames.reshape(-1, self.record_channels)
+        return frames
+
+    def _read_error_block(self) -> np.ndarray:
+        """Extract the configured error channel from the latest input block."""
+        frames = self._read_input_frames()
+        return frames[:, self.error_channel_index]
+
+    def _read_shared_reference_error_block(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Read reference and error blocks from a shared multi-channel device."""
+        if self.reference_channel_index is None:
+            raise RuntimeError("reference_channel_index is not configured.")
+        frames = self._read_input_frames()
+        reference = frames[:, self.reference_channel_index]
+        error = frames[:, self.error_channel_index]
+        return reference, error
+
+    def _prime_shared_reference_block(self) -> None:
+        """Preload the first reference block when sharing the recording device."""
+        reference, _ = self._read_shared_reference_error_block()
+        self._pending_reference_block = reference
+
     def _next_reference_block(self, loop: bool) -> np.ndarray:
         """Fetch the next reference block, padding or looping as required."""
-        if self._live_reference:
+        if self.reference_input_device_index is not None:
             if self._reference_input_stream is None:
                 raise RuntimeError("Reference input stream is not open.")
             raw = self._reference_input_stream.read(
@@ -287,6 +307,12 @@ class FxLMSANC:
             block = (
                 np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
             )
+            return block
+        if self._reference_from_record_stream:
+            if self._pending_reference_block is None:
+                raise RuntimeError("Shared reference block not primed.")
+            block = self._pending_reference_block
+            self._pending_reference_block = None
             return block
 
         start = self.reference_index
@@ -314,13 +340,6 @@ class FxLMSANC:
             self.reference_index = end
         return block.astype(np.float32)
 
-    def _compute_step(self, fx_vector: np.ndarray) -> float:
-        """Adjust step size if normalisation is requested."""
-        if not self.normalize_step:
-            return self.base_step_size
-        energy = float(np.dot(fx_vector, fx_vector)) + EPSILON
-        return self.base_step_size / energy
-
     def run(
         self,
         loop_reference: bool = False,
@@ -329,19 +348,13 @@ class FxLMSANC:
     ) -> None:
         """
         Execute the adaptive control loop.
-
-        Parameters
-        ----------
-        loop_reference:
-            If True, restarts the reference audio when it reaches the end.
-        max_duration:
-            Optional wall-clock limit in seconds.
-        metrics_callback:
-            Optional callable invoked once per block with AncMetrics data.
         """
         self._open_streams()
         self._reset_state()
         self._stop_requested = False
+
+        if self._reference_from_record_stream:
+            self._prime_shared_reference_block()
 
         start_time = time.time()
 
@@ -359,42 +372,63 @@ class FxLMSANC:
                     # We are at the final padded block and will exit next iteration.
                     self._stop_requested = True
 
-                anti_noise_block, fx_vectors = self._synthesize_block(ref_block)
+                if self.manual_gain_mode:
+                    anti_noise_block = self.manual_gain * ref_block
+                    fx_vectors = None
+                else:
+                    anti_noise_block, fx_vectors = self._synthesize_block(ref_block)
+                scaled_anti_noise = anti_noise_block * self.control_output_gain
 
                 if self.split_reference_channels:
                     left = ref_block if self.play_reference else np.zeros_like(ref_block)
-                    right = anti_noise_block
+                    right = scaled_anti_noise
                     stereo = np.empty(self.block_size * 2, dtype=np.float32)
                     stereo[0::2] = np.clip(left, -1.0, 1.0)
                     stereo[1::2] = np.clip(right, -1.0, 1.0)
                     self._control_stream.write(stereo.tobytes())
+                    output_block = right  # for metrics
                 elif self.play_reference and self.reference_device_index is not None and self._reference_stream:
-                    self._reference_stream.write(ref_block.astype(np.float32).tobytes())
-                    output_block = anti_noise_block
+                    reference_out = np.clip(ref_block, -1.0, 1.0).astype(np.float32)
+                    if self._reference_channels > 1:
+                        ref_stereo = np.zeros((self.block_size, self._reference_channels), dtype=np.float32)
+                        ref_stereo[:, self.reference_output_channel] = reference_out
+                        self._reference_stream.write(ref_stereo.astype(np.float32).tobytes())
+                    else:
+                        self._reference_stream.write(reference_out.tobytes())
+                    output_block = np.clip(scaled_anti_noise, -1.0, 1.0)
                 elif self.play_reference:
-                    output_block = np.clip(ref_block + anti_noise_block, -1.0, 1.0)
+                    output_block = np.clip(ref_block + scaled_anti_noise, -1.0, 1.0)
                 else:
-                    output_block = np.clip(anti_noise_block, -1.0, 1.0)
+                    output_block = np.clip(scaled_anti_noise, -1.0, 1.0)
 
                 if not self.split_reference_channels:
-                    self._control_stream.write(output_block.astype(np.float32).tobytes())
+                    control_out = output_block.astype(np.float32)
+                    if self._control_channels > 1:
+                        ctrl = np.zeros((self.block_size, self._control_channels), dtype=np.float32)
+                        ctrl[:, self.control_output_channel] = control_out
+                        self._control_stream.write(ctrl.astype(np.float32).tobytes())
+                    else:
+                        self._control_stream.write(control_out.tobytes())
 
-                error_raw = self._input_stream.read(
-                    self.block_size, exception_on_overflow=False
-                )
-                error_block = (
-                    np.frombuffer(error_raw, dtype=np.int16).astype(np.float32)
-                    / 32768.0
-                )
+                if self._reference_from_record_stream:
+                    next_ref, error_block = self._read_shared_reference_error_block()
+                    self._pending_reference_block = next_ref
+                else:
+                    error_block = self._read_error_block()
 
-                self._update_weights(error_block, fx_vectors)
+                if not self.manual_gain_mode:
+                    self._update_weights(error_block, fx_vectors)
 
                 if metrics_callback:
                     error_rms = float(np.sqrt(np.mean(error_block**2)))
+                    ref_rms = float(np.sqrt(np.mean(ref_block**2)))
+                    out_rms = float(np.sqrt(np.mean(output_block**2)))
                     metrics = AncMetrics(
                         frame_index=self.frame_index,
                         error_rms=error_rms,
                         step_size=self.base_step_size,
+                        reference_rms=ref_rms,
+                        output_rms=out_rms,
                     )
                     metrics_callback(metrics)
 
@@ -447,8 +481,14 @@ class FxLMSANC:
     def _update_weights(self, error_block: np.ndarray, fx_vectors: np.ndarray) -> None:
         """LMS weight adaptation for the current block."""
         for e, fx in zip(error_block, fx_vectors):
-            step = self._compute_step(fx)
-            self.weights += step * e * fx
+            power = float(np.dot(fx, fx)) + EPSILON
+            mu_eff = self.base_step_size / power
+
+            if self.leakage > 0.0:
+                self.weights *= (1.0 - self.leakage)
+
+            self.weights += mu_eff * e * fx
+
 
     def measure_secondary_path(
         self,
@@ -458,10 +498,6 @@ class FxLMSANC:
     ) -> np.ndarray:
         """
         Excite the secondary path (speaker→mic) and estimate an FIR model.
-
-        This sends white noise to the speaker for the requested duration,
-        records the response at the error microphone, and solves a least-squares
-        problem to approximate the impulse response.
         """
         self._open_streams()
 
@@ -485,15 +521,15 @@ class FxLMSANC:
                 self._control_stream.write(stereo_block.tobytes())
             else:
                 self._control_stream.write(block.astype(np.float32).tobytes())
-            raw = self._input_stream.read(
-                self.block_size, exception_on_overflow=False
-            )
-            error_block = (
-                np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
-            )
+            error_block = self._read_error_block()
             slice_len = min(self.block_size, n_samples - ptr)
             recorded[ptr : ptr + slice_len] = error_block[:slice_len]
             ptr += self.block_size
+
+        excitation_rms = float(np.sqrt(np.mean(excitation**2)))
+        recorded_rms = float(np.sqrt(np.mean(recorded**2)))
+        self._last_measure_excitation_rms = excitation_rms
+        self._last_measure_recorded_rms = recorded_rms
 
         # Build Toeplitz matrix for least squares: y = Xh
         X = np.zeros((n_samples - fir_length, fir_length), dtype=np.float32)
@@ -502,8 +538,16 @@ class FxLMSANC:
         y = recorded[fir_length:]
 
         h, *_ = np.linalg.lstsq(X, y, rcond=None)
+
+        # Normalize secondary path energy to 1.0
+        energy = float(np.sqrt(np.sum(h**2) + 1e-12))
+        if energy > 0.0:
+            h = h / energy
+
         self.secondary_path = h.astype(np.float32)
-        logging.info("Secondary path updated (length %d)", fir_length)
+        logging.info(
+            "Secondary path updated (length %d, norm=%.3e)", fir_length, energy
+        )
         return self.secondary_path.copy()
 
 
