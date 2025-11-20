@@ -67,8 +67,6 @@ MEASUREMENT_AVERAGES = 5
 
 MODE_CHOICES = ("anc", "measure")
 DEFAULT_MODE = "anc"
--
-
 
 def live_reference_enabled() -> bool:
     """Return True when a live reference microphone is configured."""
