@@ -14,6 +14,11 @@ This research aims to demonstrate how AI sound classification and predictive mod
 
 ---
 
+## System Architecture
+<img width="1175" height="536" alt="image" src="https://github.com/user-attachments/assets/763d69f5-8ac8-497a-af48-f74a7d8e363f" />
+
+---
+
 ## Team Members  
 
 | Name | Organization | Email |
