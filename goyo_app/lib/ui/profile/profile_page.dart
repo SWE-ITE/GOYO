@@ -253,19 +253,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 16),
 
-            // ── Save changes ─────────────────────────────────────────
-            FilledButton(
-              onPressed: auth.profileUpdating ? null : _save,
-              child: auth.profileUpdating
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Save changes'),
-            ),
-            const SizedBox(height: 10),
-
             // 로그아웃 버튼(그대로 유지)
             FilledButton.tonalIcon(
               onPressed: () => Navigator.of(
@@ -278,34 +265,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-
-  Future<void> _save() async {
-    final auth = context.read<AuthProvider>();
-    final trimmed = nameCtrl.text.trim();
-    if (trimmed.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('이름을 입력해 주세요.')));
-      return;
-    }
-
-    // 1) 이름 저장 (백엔드 연동 지점)
-    try {
-      await auth.updateMyName(trimmed);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('이름 변경에 실패했어요: $e')));
-    }
-  }
-
-  // 2) 모드/프리셋 저장 필요 시 여기서 API 호출 추가
-  // await api.saveAncPreset(mode: store.mode, auto: store.auto, intensity: store.intensity);
 
   void _syncController(String name) {
     _lastLoadedName = name;
