@@ -1,0 +1,14 @@
+[Unit]
+Description=GOYO Device Server (mDNS + HTTP Config)
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/goyo
+ExecStart=/usr/bin/python3 /home/pi/goyo/device_server.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

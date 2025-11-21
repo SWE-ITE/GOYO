@@ -13,6 +13,7 @@ import time
 import logging
 import signal
 import sys
+import os
 import numpy as np
 from typing import Optional
 from dataclasses import dataclass
@@ -29,14 +30,14 @@ except ImportError:
 # 환경설정 (또는 .env 파일에서 로드)
 @dataclass
 class Config:
-    # MQTT
-    MQTT_BROKER_HOST: str = "3.x.x.x"  # ⚠️ EC2 #1의 Public IP로 변경
+    # MQTT (설정 파일에서 로드, 없으면 기본값)
+    MQTT_BROKER_HOST: str = "localhost"
     MQTT_BROKER_PORT: int = 1883
     MQTT_USERNAME: str = "raspberry_pi"
-    MQTT_PASSWORD: str = "raspi_mqtt_pass_2025"
+    MQTT_PASSWORD: str = ""
 
-    # 사용자 정보
-    USER_ID: str = "1"  # ⚠️ Backend에서 생성한 사용자 ID
+    # 사용자 정보 (설정 파일에서 로드)
+    USER_ID: str = "1"
 
     # 오디오 설정
     SAMPLE_RATE: int = 16000  # AI 요구사항: 16kHz
@@ -67,6 +68,21 @@ class Config:
 
 
 config = Config()
+
+# 설정 파일에서 MQTT 설정 로드
+CONFIG_FILE = "/home/pi/goyo_config.json"
+if os.path.exists(CONFIG_FILE):
+    try:
+        with open(CONFIG_FILE, 'r') as f:
+            mqtt_config = json.load(f)
+            config.MQTT_BROKER_HOST = mqtt_config.get('mqtt_broker_host', config.MQTT_BROKER_HOST)
+            config.MQTT_BROKER_PORT = mqtt_config.get('mqtt_broker_port', config.MQTT_BROKER_PORT)
+            config.MQTT_USERNAME = mqtt_config.get('mqtt_username', config.MQTT_USERNAME)
+            config.MQTT_PASSWORD = mqtt_config.get('mqtt_password', config.MQTT_PASSWORD)
+            config.USER_ID = mqtt_config.get('user_id', config.USER_ID)
+            logging.info(f"✅ Loaded MQTT config from {CONFIG_FILE}")
+    except Exception as e:
+        logging.warning(f"⚠️ Failed to load config file: {e}")
 
 # 로깅 설정
 logging.basicConfig(
