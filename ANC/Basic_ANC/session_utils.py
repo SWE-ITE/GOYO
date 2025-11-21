@@ -103,15 +103,6 @@ def play_reference(
 ) -> None:
     """
     Stream the reference signal to the specified output(s).
-
-    Args:
-        reference_path: Audio file to play.
-        control_device: PyAudio output device for the control speaker.
-        reference_device: Optional dedicated device for the reference speaker.
-        split_reference_channels: When True, send reference/anti-noise over one stereo device.
-        block_size: Samples per audio callback; defaults to ``DEFAULT_BLOCK_SIZE``.
-        duration: Optional wall-clock limit in seconds.
-        loop: When True, restart playback after reaching the end.
     """
     signal, sample_rate = read_mono_wav(str(reference_path))
     block_len = block_size if block_size is not None else DEFAULT_BLOCK_SIZE

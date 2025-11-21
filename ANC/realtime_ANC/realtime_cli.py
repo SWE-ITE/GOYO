@@ -1,14 +1,6 @@
 """
 Minimal real-time FxLMS runner that uses a dedicated reference microphone for
 the filtered-x LMS loop.
-
-Edit the configuration constants below to match your device indices (reference
-mic, error mic, control speaker) and secondary-path measurements. Then launch
-one of the modes with:
-
-    python -m ANC.realtime_ANC.realtime_cli [anc|measure]
-
-If no mode is provided, ``anc`` is used by default.
 """
 
 from __future__ import annotations
@@ -34,9 +26,7 @@ from ANC.basic_ANC.session_utils import create_controller, play_reference
 
 ANC_ROOT = Path(__file__).resolve().parent.parent
 
-# ---------------------------------------------------------------------------
 # Configuration
-# ---------------------------------------------------------------------------
 REFERENCE_PATH = ANC_ROOT / "src" / "sine_200Hz.wav"
 SECONDARY_PATH = ANC_ROOT / "realtime_ANC" / "secondary_path.npy"
 
@@ -77,8 +67,6 @@ MEASUREMENT_AVERAGES = 5
 
 MODE_CHOICES = ("anc", "measure")
 DEFAULT_MODE = "anc"
-# ---------------------------------------------------------------------------
-
 
 def live_reference_enabled() -> bool:
     """Return True when a live reference microphone is configured."""
