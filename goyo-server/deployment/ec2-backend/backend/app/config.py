@@ -6,11 +6,6 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str
 
-    # Redis
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
-    REDIS_URL: Optional[str] = None  # Optional, will be constructed from HOST:PORT if not provided
-
     # MQTT
     MQTT_BROKER_HOST: str = "localhost"
     MQTT_BROKER_PORT: int = 1883
@@ -37,9 +32,9 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
 
     # Audio
-    SAMPLE_RATE: int = 44100
+    SAMPLE_RATE: int = 16000
     CHANNELS: int = 1
-    CHUNK_SIZE: int = 1024
+    CHUNK_SIZE: int = 16000
 
     class Config:
         env_file = ".env"
@@ -53,9 +48,6 @@ class Settings(BaseSettings):
             self.MQTT_BROKER_PORT = self.MQTT_PORT
         if self.JWT_SECRET_KEY and not self.SECRET_KEY:
             self.SECRET_KEY = self.JWT_SECRET_KEY
-        # Construct REDIS_URL if not provided
-        if not self.REDIS_URL:
-            self.REDIS_URL = f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
 
 @lru_cache()
 def get_settings():

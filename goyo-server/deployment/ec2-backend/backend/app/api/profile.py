@@ -5,8 +5,7 @@ from app.schemas.profile import (
     ProfileResponse,
     ProfileUpdate,
     ANCSettings,
-    ANCToggle,
-    ANCSuppressionLevel
+    ANCToggle
 )
 from app.services.profile_service import ProfileService
 from app.utils.dependencies import get_current_user, get_current_user_id
@@ -54,8 +53,7 @@ def get_anc_settings(
     try:
         settings = ProfileService.get_anc_settings(db, user_id)
         return {
-            "anc_enabled": settings["anc_enabled"],
-            "suppression_level": settings["suppression_level"]
+            "anc_enabled": settings["anc_enabled"]
         }
     except ValueError as e:
         raise HTTPException(
@@ -76,33 +74,10 @@ def toggle_anc(
         user = ProfileService.toggle_anc(db, user_id, toggle_data.enabled)
         return {
             "message": f"ANC {'enabled' if toggle_data.enabled else 'disabled'}",
-            "anc_enabled": user.anc_enabled,
-            "suppression_level": user.suppression_level
-        }
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-
-@router.put("/anc/suppression")
-def set_suppression_level(
-    level_data: ANCSuppressionLevel,
-    db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
-):
-    '''
-    ANC 억제 강도 설정 (0-100)
-    '''
-    try:
-        user = ProfileService.set_suppression_level(db, user_id, level_data.level)
-        return {
-            "message": "Suppression level updated",
-            "suppression_level": user.suppression_level,
             "anc_enabled": user.anc_enabled
         }
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e)
         )

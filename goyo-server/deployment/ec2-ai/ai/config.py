@@ -11,13 +11,7 @@ class Settings(BaseSettings):
     # Server
     AI_SERVER_HOST: str = "0.0.0.0"
     AI_SERVER_PORT: int = 8001
-    
-    # Redis
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
-    REDIS_DB: int = 0
-    REDIS_PASSWORD: Optional[str] = None
-    
+
     # MQTT
     MQTT_BROKER_HOST: str = "localhost"
     MQTT_BROKER_PORT: int = 1883
@@ -25,8 +19,8 @@ class Settings(BaseSettings):
     MQTT_PASSWORD: Optional[str] = None
     
     # Audio Processing
-    SAMPLE_RATE: int = 44100  # Hz
-    CHUNK_SIZE: int = 1024  # samples
+    SAMPLE_RATE: int = 16000  # Hz (AI 요구사항)
+    CHUNK_SIZE: int = 16000  # samples (1초 @ 16kHz)
     CHANNELS: int = 1  # mono
     AUDIO_FORMAT: str = "int16"  # 16-bit PCM
     
@@ -35,7 +29,6 @@ class Settings(BaseSettings):
     MAX_BUFFER_SIZE: int = 10  # 최대 버퍼 청크 수
     
     # ANC Settings
-    DEFAULT_SUPPRESSION_LEVEL: int = 80  # 0-100
     LATENCY_TARGET_MS: int = 30  # 목표 지연시간
     
     # Model Paths (Phase 5에서 사용)

@@ -15,7 +15,6 @@ class User(Base):
     
     # ANC Settings
     anc_enabled = Column(Boolean, default=False)  # ANC ON/OFF
-    suppression_level = Column(Integer, default=80)  # 억제 강도 (0-100)
-    
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

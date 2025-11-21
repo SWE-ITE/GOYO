@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from app.models.device import Device
-from app.utils.redis_client import redis_client
 from app.utils.audio_device import audio_manager
 from typing import List, Optional
 import random
@@ -12,19 +11,6 @@ class DeviceService:
     def discover_usb_microphones() -> List[dict]:
         '''USB 마이크 검색'''
         usb_mics = audio_manager.list_usb_microphones()
-        
-        # Redis에 발견된 USB 마이크 임시 저장
-        for mic in usb_mics:
-            redis_client.set_device_status(
-                mic["device_id"],
-                {
-                    "discovered": True, 
-                    "discovered_at": datetime.utcnow().isoformat(),
-                    "type": "usb_microphone"
-                },
-                expire=300
-            )
-        
         return usb_mics
     
     @staticmethod
@@ -41,14 +27,6 @@ class DeviceService:
                 "ip_address": f"192.168.1.{random.randint(100, 200)}"
             }
         ]
-        
-        for speaker in mock_speakers:
-            redis_client.set_device_status(
-                speaker["device_id"],
-                {"discovered": True, "discovered_at": datetime.utcnow().isoformat()},
-                expire=300
-            )
-        
         return mock_speakers
     
     @staticmethod
@@ -75,16 +53,7 @@ class DeviceService:
         db.add(new_device)
         db.commit()
         db.refresh(new_device)
-        
-        redis_client.set_device_status(
-            new_device.device_id,
-            {
-                "is_connected": True,
-                "paired_at": datetime.utcnow().isoformat(),
-                "user_id": user_id
-            }
-        )
-        
+
         return new_device
     
     @staticmethod
@@ -130,16 +99,13 @@ class DeviceService:
         device = db.query(Device).filter(Device.device_id == device_id).first()
         if not device:
             raise ValueError("Device not found")
-        
-        redis_status = redis_client.get_device_status(device_id)
-        
+
         return {
             "device_id": device.device_id,
             "device_name": device.device_name,
             "device_type": device.device_type,
             "is_connected": device.is_connected,
-            "is_calibrated": device.is_calibrated,
-            "redis_status": redis_status
+            "is_calibrated": device.is_calibrated
         }
     
     @staticmethod
@@ -174,7 +140,6 @@ class DeviceService:
         device = db.query(Device).filter(Device.device_id == device_id).first()
         if not device:
             raise ValueError("Device not found")
-        
+
         db.delete(device)
         db.commit()
-        redis_client.delete_device_status(device_id)

@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from app.models.user import User
-from app.utils.redis_client import redis_client
 from typing import Optional
 
 class ProfileService:
@@ -29,18 +28,13 @@ class ProfileService:
     
     @staticmethod
     def get_anc_settings(db: Session, user_id: int) -> dict:
-        '''ANC 설정 조회 (DB + Redis)'''
+        '''ANC 설정 조회'''
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise ValueError("User not found")
-        
-        # Redis에서 실시간 상태 확인
-        redis_status = redis_client.get_user_session(user_id)
-        
+
         return {
-            "anc_enabled": user.anc_enabled,
-            "suppression_level": user.suppression_level,
-            "redis_status": redis_status
+            "anc_enabled": user.anc_enabled
         }
     
     @staticmethod
@@ -49,38 +43,9 @@ class ProfileService:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise ValueError("User not found")
-        
+
         user.anc_enabled = enabled
         db.commit()
         db.refresh(user)
-        
-        # Redis에 실시간 상태 저장
-        redis_client.set_user_session(user_id, {
-            "anc_enabled": enabled,
-            "updated_at": user.updated_at.isoformat() if user.updated_at else None
-        })
-        
-        return user
-    
-    @staticmethod
-    def set_suppression_level(db: Session, user_id: int, level: int) -> User:
-        '''억제 강도 설정 (0-100)'''
-        if not 0 <= level <= 100:
-            raise ValueError("Suppression level must be between 0 and 100")
-        
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise ValueError("User not found")
-        
-        user.suppression_level = level
-        db.commit()
-        db.refresh(user)
-        
-        # Redis 업데이트
-        redis_client.set_user_session(user_id, {
-            "anc_enabled": user.anc_enabled,
-            "suppression_level": level,
-            "updated_at": user.updated_at.isoformat() if user.updated_at else None
-        })
-        
+
         return user

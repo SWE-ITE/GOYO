@@ -7,9 +7,8 @@ class ProfileResponse(BaseModel):
     email: str
     name: str
     anc_enabled: bool
-    suppression_level: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -18,10 +17,6 @@ class ProfileUpdate(BaseModel):
 
 class ANCSettings(BaseModel):
     anc_enabled: bool
-    suppression_level: int = 80  # 0-100
 
 class ANCToggle(BaseModel):
     enabled: bool
-
-class ANCSuppressionLevel(BaseModel):
-    level: int  # 0-100

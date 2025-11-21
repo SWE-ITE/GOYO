@@ -19,25 +19,16 @@ class ANCController:
     def __init__(self):
         # 사용자별 ANC 상태
         self.active_users: Dict[str, bool] = {}
-        self.suppression_levels: Dict[str, int] = {}
-    
+
     def start(self, user_id: str):
         """ANC 시작"""
         self.active_users[user_id] = True
-        if user_id not in self.suppression_levels:
-            self.suppression_levels[user_id] = settings.DEFAULT_SUPPRESSION_LEVEL
         logger.info(f"▶️  ANC started for user {user_id}")
-    
+
     def stop(self, user_id: str):
         """ANC 중지"""
         self.active_users[user_id] = False
         logger.info(f"⏹️  ANC stopped for user {user_id}")
-    
-    def adjust(self, user_id: str, suppression_level: int):
-        """억제 강도 조절"""
-        if 0 <= suppression_level <= 100:
-            self.suppression_levels[user_id] = suppression_level
-            logger.info(f"🔧 ANC adjusted: {suppression_level}% for user {user_id}")
     
     def is_active(self, user_id: str) -> bool:
         """ANC 활성 상태 확인"""
@@ -51,29 +42,21 @@ class ANCController:
     ) -> np.ndarray:
         """
         안티-노이즈 신호 생성 및 MQTT로 스피커에 전송
-
-        Phase 3.5: 기본 역위상 신호
-        Phase 5: FxLMS 적응 필터, 공간 전달 함수 적용
-
         Args:
             reference_data: Reference 마이크 데이터 (노이즈 소스)
             error_data: Error 마이크 데이터 (귀 근처 잔여 노이즈)
             user_id: 사용자 ID
-
         Returns:
             안티노이즈 신호 (float32, -1.0 ~ 1.0)
         """
         start_time = time.time()
 
         try:
-            # 억제 강도 적용
-            suppression = self.suppression_levels.get(user_id, 80) / 100.0
-
             # Int16 → Float32 변환
             reference_float = reference_data.astype(np.float32) / 32768.0
 
-            # 기본 역위상 신호 생성 (180도 위상 반전)
-            anti_noise = -reference_float * suppression
+            # 기본 역위상 신호 생성 (180도 위상 반전) - 100% 억제
+            anti_noise = -reference_float
 
             # Phase 5에서 구현 예정:
             # 1. 공간 전달 함수 적용

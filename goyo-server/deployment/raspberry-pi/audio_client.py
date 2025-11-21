@@ -57,10 +57,9 @@ class Config:
     # VAD (Voice Activity Detection) 설정
     VAD_ENABLED: bool = True            # VAD 필터링 활성화
     VAD_THRESHOLD_DB: float = 65.0      # RMS dB 임계치
-    CHUNK_DURATION: float = 0.5         # 0.5초 청크
-    WINDOW_DURATION: float = 1.0        # 1.0초 윈도우
-    BUFFER_DURATION: float = 3.0        # 3초 버퍼링
-    CONSISTENCY_THRESHOLD: int = 5      # 6개 중 5개 일관성
+    CHUNK_DURATION: float = 1.0         # 1.0초 청크 (AI 요구사항)
+    NUM_CHUNKS: int = 5                 # 5개 청크 수집 (AI 요구사항: 5x16000)
+    CONSISTENCY_THRESHOLD: int = 5      # 5개 중 5개 일관성
 
     # DL 모델
     MODEL_PATH: str = "models/vacuum_classifier.tflite"
@@ -142,7 +141,7 @@ class VADFilter:
 
     def process_chunk(self, audio_chunk: bytes) -> Optional[str]:
         """
-        0.5초 오디오 청크 처리
+        1초 오디오 청크 처리 (AI 요구사항: 16000 샘플)
 
         Returns:
             - None: 계속 대기/버퍼링
@@ -160,7 +159,6 @@ class VADFilter:
             if db_level >= config.VAD_THRESHOLD_DB:
                 logger.info(f"🔊 VAD Triggered: {db_level:.1f} dB (>= {config.VAD_THRESHOLD_DB})")
                 self.state = "BUFFERING"
-                self.audio_buffer = []
                 self.inference_queue = []
                 logger.info("→ Buffering mode started")
 
@@ -173,61 +171,51 @@ class VADFilter:
                 logger.info(f"🔇 Noise stopped: {db_level:.1f} dB (< {config.VAD_THRESHOLD_DB})")
                 logger.info("→ Back to monitoring mode")
                 self.state = "MONITORING"
-                self.audio_buffer = []
                 self.inference_queue = []
                 return None
 
-            # 버퍼에 추가
-            self.audio_buffer.append(audio_chunk)
+            # 1초 청크를 바로 inference_queue에 추가
+            self.inference_queue.append(audio_chunk)
 
-            # 1.0초 윈도우 생성 가능한가? (최소 2개 청크 필요)
-            if len(self.audio_buffer) >= 2:
-                # 마지막 2개 청크를 합쳐서 1.0초 윈도우 생성
-                window = self.audio_buffer[-2] + self.audio_buffer[-1]
-                self.inference_queue.append(window)
+            logger.debug(f"📦 Chunk added: {len(self.inference_queue)}/{config.NUM_CHUNKS}")
 
-                # 0.5초 overlap 유지: 첫 번째 청크 제거
-                self.audio_buffer.pop(0)
+            # 5개 청크 모두 수집 완료?
+            if len(self.inference_queue) == config.NUM_CHUNKS:
+                logger.info(f"✅ Buffer full ({config.NUM_CHUNKS} chunks) - Running DL inference...")
+                result = self.classify_noise()
 
-                logger.debug(f"📦 Window added: {len(self.inference_queue)}/6")
+                # 초기화
+                self.inference_queue = []
+                self.state = "MONITORING"
 
-                # 6개 윈도우 모두 수집 완료?
-                if len(self.inference_queue) == 6:
-                    logger.info("✅ Buffer full (6 windows) - Running DL inference...")
-                    result = self.classify_noise()
-
-                    # 초기화
-                    self.audio_buffer = []
-                    self.inference_queue = []
-                    self.state = "MONITORING"
-
-                    return result
+                return result
 
         return None
 
     def classify_noise(self) -> Optional[str]:
-        """DL 모델로 소음 분류"""
+        """DL 모델로 소음 분류 - 입력 형태: (5, 16000) Float32"""
         try:
             if config.USE_MOCK_MODEL:
                 # Mock 모드: 항상 가전 소음으로 판단 (개발용)
                 logger.info("🧪 MOCK: Simulating appliance noise detection")
-                appliance_count = 6  # 6/6
+                appliance_count = config.NUM_CHUNKS  # 5/5
             else:
                 # 실제 TFLite 모델 추론
-                # 6개 윈도우를 numpy array로 변환
+                # 5개 청크를 (5, 16000) Float32 numpy array로 변환
                 input_data = []
-                for window in self.inference_queue:
-                    audio_np = np.frombuffer(window, dtype=np.int16).astype(np.float32)
-                    # 정규화 [-1, 1]
+                for chunk in self.inference_queue:
+                    audio_np = np.frombuffer(chunk, dtype=np.int16).astype(np.float32)
+                    # 정규화 [-1.0, 1.0] (AI 요구사항)
                     audio_np = audio_np / 32768.0
                     input_data.append(audio_np)
 
+                # (5, 16000) 형태로 변환
                 input_data = np.array(input_data, dtype=np.float32)
+                logger.debug(f"📐 Input shape: {input_data.shape}")  # Should be (5, 16000)
 
-                # 모델 입력 형태에 맞게 reshape
-                # TODO: AI 팀에서 제공한 입력 형태에 맞게 조정 필요
-                # 예: (1, 6, audio_length) 또는 (6, audio_length, 1)
-                input_data = np.expand_dims(input_data, axis=0)
+                # 모델 입력 형태에 맞게 reshape (필요시)
+                # AI 팀 모델이 (5, 16000) 그대로 받는다면 그대로 사용
+                # 배치 차원이 필요하면: input_data = np.expand_dims(input_data, axis=0)
 
                 # TFLite 추론
                 self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
@@ -235,14 +223,14 @@ class VADFilter:
                 output = self.interpreter.get_tensor(self.output_details[0]['index'])
 
                 # 출력 해석
-                # TODO: AI 팀에서 제공한 출력 형태에 맞게 조정 필요
-                # 가정: output shape = (1, 6, 2) → [외부소음 확률, 가전소음 확률] per window
-                predictions = output[0]  # (6, 2)
+                # AI 팀에서 제공한 출력 형태에 맞게 조정 필요
+                # 가정: output shape = (5, 2) → [외부소음 확률, 가전소음 확률] per chunk
+                predictions = output  # (5, 2)
 
-                # 5/6 일관성 체크
+                # 5/5 일관성 체크
                 appliance_count = np.sum(predictions[:, 1] > 0.5)
 
-            logger.info(f"📊 DL Results: {appliance_count}/6 chunks classified as appliance noise")
+            logger.info(f"📊 DL Results: {appliance_count}/{config.NUM_CHUNKS} chunks classified as appliance noise")
 
             if appliance_count >= config.CONSISTENCY_THRESHOLD:
                 logger.info("✅ Appliance noise confirmed!")

@@ -19,9 +19,8 @@ class UserResponse(UserBase):
     is_active: bool
     is_verified: bool
     anc_enabled: bool
-    suppression_level: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 

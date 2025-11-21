@@ -174,42 +174,26 @@ async def process_anc(user_id: str):
 async def publish_to_speaker(user_id: str, audio_data: bytes):
     """MQTT로 스피커에 안티-노이즈 신호 전송"""
     try:
-        # MQTT 토픽: speaker/{user_id}/output
-        topic = f"speaker/{user_id}/output"
-        
-        # Redis에 임시 저장 (MQTT 클라이언트가 가져감)
-        await redis_client.set(
-            f"mqtt:speaker:{user_id}",
-            audio_data,
-            ex=1  # 1초 TTL
-        )
-        
+        # MQTT 토픽: mqtt/speaker/output/{user_id}
+        topic = f"mqtt/speaker/output/{user_id}"
+
+        # MQTT로 직접 전송
+        await mqtt_publisher.publish(topic, audio_data)
+
         logger.debug(f"📤 Published to speaker: {len(audio_data)} bytes")
-        
+
     except Exception as e:
         logger.error(f"❌ Speaker publish error: {e}")
 
 
-async def publish_anc_result(user_id: str, result: dict):
-    """ANC 처리 결과를 Backend에 전송"""
-    try:
-        await redis_client.publish(
-            "anc:result",
-            json.dumps({
-                "user_id": user_id,
-                **result
-            })
-        )
-        
-    except Exception as e:
-        logger.error(f"❌ Result publish error: {e}")
+# publish_anc_result 함수 제거됨 - Backend에 결과 전송이 필요하면 MQTT 사용
 
 
 def handle_anc_control(data: dict):
     """ANC 제어 명령 처리 (MQTT 콜백)"""
     try:
         user_id = data.get("user_id")
-        command = data.get("command")  # "start", "stop", "adjust"
+        command = data.get("command")  # "start", "stop"
         device_type = data.get("device_type", "unknown")
         params = data.get("params", {})
 
@@ -233,11 +217,6 @@ def handle_anc_control(data: dict):
             # Audio Processor 세션 비활성화
             if hasattr(audio_processor, 'deactivate_session'):
                 audio_processor.deactivate_session(user_id)
-
-        elif command == "adjust":
-            suppression_level = params.get("suppression_level", 80)
-            anc_controller.adjust(user_id, suppression_level)
-            logger.info(f"🔧 ANC adjusted: {suppression_level}%")
 
     except Exception as e:
         logger.error(f"❌ ANC control error: {e}")
