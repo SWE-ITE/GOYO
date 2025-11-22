@@ -4,9 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/goyo
-ExecStart=/usr/bin/python3 /home/pi/goyo/device_server.py
+User=hoyoungchung
+WorkingDirectory=/home/hoyoungchung/goyo
+ExecStart=/home/hoyoungchung/goyo/venv/bin/python3 /home/hoyoungchung/goyo/device_server.py
 Restart=always
 RestartSec=10
 

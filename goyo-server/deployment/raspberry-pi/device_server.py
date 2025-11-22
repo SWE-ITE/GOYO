@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # MQTT 설정 저장 경로
-CONFIG_FILE = "/home/pi/goyo_config.json"
+CONFIG_FILE = "/home/hoyoungchung/goyo/goyo_config.json"
 
 # mDNS 서비스
 zeroconf = None
@@ -44,15 +44,38 @@ def get_device_id():
 
 
 def get_local_ip():
-    """로컬 IP 주소 가져오기"""
+    """로컬 IP 주소 가져오기 (여러 방법 시도)"""
+    # 방법 1: Google DNS로 연결해서 로컬 IP 감지
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
-        return ip
+        if ip and not ip.startswith('127.'):
+            return ip
     except:
-        return "127.0.0.1"
+        pass
+
+    # 방법 2: hostname -I 명령어 사용 (Raspberry Pi)
+    try:
+        import subprocess
+        result = subprocess.run(['hostname', '-I'], capture_output=True, text=True, timeout=2)
+        ips = result.stdout.strip().split()
+        if ips and not ips[0].startswith('127.'):
+            return ips[0]
+    except:
+        pass
+
+    # 방법 3: hostname으로 시도
+    try:
+        hostname = socket.gethostname()
+        ip = socket.gethostbyname(hostname)
+        if not ip.startswith('127.'):
+            return ip
+    except:
+        pass
+
+    return "127.0.0.1"
 
 
 def register_mdns_service():

@@ -38,6 +38,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"  # .env의 사용하지 않는 필드 무시 (Redis 등)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

@@ -4,98 +4,18 @@ from typing import List, Optional
 import json
 import logging
 from datetime import datetime
-from zeroconf import Zeroconf, ServiceBrowser, ServiceListener
-import socket
-import requests
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
 
-class GoyoDeviceListener(ServiceListener):
-    """mDNS로 GOYO 디바이스 검색"""
-
-    def __init__(self):
-        self.devices = []
-
-    def add_service(self, zeroconf: Zeroconf, service_type: str, name: str):
-        info = zeroconf.get_service_info(service_type, name)
-        if info:
-            # GOYO 디바이스 정보 파싱
-            device_id = name.split('.')[0]  # goyo-rpi-1234._goyo._tcp.local
-            ip_address = socket.inet_ntoa(info.addresses[0])
-
-            self.devices.append({
-                "device_id": device_id,
-                "device_name": info.properties.get(b'name', b'GOYO Device').decode('utf-8'),
-                "device_type": "goyo_device",
-                "connection_type": "wifi",
-                "signal_strength": 85,  # mDNS는 signal strength 제공 안 함
-                "ip_address": ip_address,
-                "components": {
-                    "reference_mic": True,
-                    "error_mic": True,
-                    "speaker": True
-                }
-            })
-
-    def remove_service(self, zeroconf: Zeroconf, service_type: str, name: str):
-        pass
-
-    def update_service(self, zeroconf: Zeroconf, service_type: str, name: str):
-        pass
-
-
 class DeviceService:
-    @staticmethod
-    def discover_goyo_devices() -> List[dict]:
-        '''
-        mDNS로 같은 WiFi의 GOYO 라즈베리파이 디바이스 검색
-        서비스 타입: _goyo._tcp.local.
-        '''
-        try:
-            zeroconf = Zeroconf()
-            listener = GoyoDeviceListener()
-            browser = ServiceBrowser(zeroconf, "_goyo._tcp.local.", listener)
-
-            # 3초 대기하며 디바이스 검색
-            import time
-            time.sleep(3)
-
-            zeroconf.close()
-
-            logger.info(f"✅ Found {len(listener.devices)} GOYO devices")
-            return listener.devices
-
-        except Exception as e:
-            logger.error(f"❌ mDNS discovery error: {e}")
-            # 개발 중 fallback: 목업 데이터
-            return DeviceService._mock_goyo_devices()
-
-    @staticmethod
-    def _mock_goyo_devices() -> List[dict]:
-        '''개발용 목업 GOYO 디바이스'''
-        import random
-        return [
-            {
-                "device_id": f"goyo-rpi-{random.randint(1000, 9999)}",
-                "device_name": "GOYO Device",
-                "device_type": "goyo_device",
-                "connection_type": "wifi",
-                "signal_strength": random.randint(70, 100),
-                "ip_address": f"192.168.1.{random.randint(100, 200)}",
-                "components": {
-                    "reference_mic": True,
-                    "error_mic": True,
-                    "speaker": True
-                }
-            }
-        ]
-
     @staticmethod
     def pair_device(db: Session, user_id: int, device_data: dict) -> Device:
         '''
-        GOYO 디바이스 페어링 및 MQTT 설정 전달
+        GOYO 디바이스 페어링 (앱에서 디바이스 검색 및 MQTT 설정 완료 후 호출)
+        - DB에 디바이스 등록
+        - 앱이 이미 Raspberry Pi에 MQTT 설정을 전달한 상태
         '''
         # 기존 디바이스 확인
         existing = db.query(Device).filter(
@@ -110,9 +30,7 @@ class DeviceService:
             existing.ip_address = device_data.get("ip_address")
             db.commit()
             db.refresh(existing)
-
-            # MQTT 설정 재전송
-            DeviceService._send_mqtt_config(existing.ip_address, user_id)
+            logger.info(f"✅ Device {existing.device_id} re-paired")
             return existing
 
         # 새 디바이스 생성
@@ -129,40 +47,9 @@ class DeviceService:
         db.add(new_device)
         db.commit()
         db.refresh(new_device)
-
-        # 라즈베리파이에 MQTT 설정 전달
-        try:
-            DeviceService._send_mqtt_config(new_device.ip_address, user_id)
-            logger.info(f"✅ MQTT config sent to {new_device.ip_address}")
-        except Exception as e:
-            logger.error(f"❌ Failed to send MQTT config: {e}")
+        logger.info(f"✅ Device {new_device.device_id} paired successfully")
 
         return new_device
-
-    @staticmethod
-    def _send_mqtt_config(ip_address: str, user_id: int):
-        '''라즈베리파이에 MQTT 브로커 설정 전달'''
-        config_url = f"http://{ip_address}:5000/configure"
-
-        mqtt_config = {
-            "mqtt_broker_host": settings.MQTT_BROKER_HOST,
-            "mqtt_broker_port": settings.MQTT_BROKER_PORT,
-            "mqtt_username": settings.MQTT_USERNAME,
-            "mqtt_password": settings.MQTT_PASSWORD,
-            "user_id": str(user_id)
-        }
-
-        try:
-            response = requests.post(
-                config_url,
-                json=mqtt_config,
-                timeout=5
-            )
-            response.raise_for_status()
-            logger.info(f"✅ MQTT config sent to {ip_address}")
-        except Exception as e:
-            logger.error(f"❌ Failed to send MQTT config to {ip_address}: {e}")
-            raise ValueError(f"Failed to configure device: {e}")
 
     @staticmethod
     def get_user_devices(db: Session, user_id: int) -> List[Device]:

@@ -1,18 +1,14 @@
 [Unit]
-Description=GOYO Audio Capture Service
+Description=GOYO Audio Capture Service (MQTT Client)
 After=network.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/goyo-audio-client
-ExecStart=/usr/bin/python3 /home/pi/goyo-audio-client/audio_client.py
+User=hoyoungchung
+WorkingDirectory=/home/hoyoungchung/goyo
+ExecStart=/home/hoyoungchung/goyo/venv/bin/python3 /home/hoyoungchung/goyo/audio_client.py
 Restart=always
 RestartSec=10
-
-# 환경 변수 (optional, .env 파일 사용 시)
-# Environment="MQTT_BROKER_HOST=3.x.x.x"
-# Environment="USER_ID=1"
 
 [Install]
 WantedBy=multi-user.target

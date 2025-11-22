@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.device import (
-    DeviceDiscover,
     DevicePair,
     DeviceResponse,
     DeviceCalibrate,
@@ -14,21 +13,6 @@ from typing import List
 
 router = APIRouter(prefix="/api/devices", tags=["Device Management"])
 
-@router.post("/discover", response_model=List[DeviceDiscover])
-def discover_goyo_devices(user_id: int = Depends(get_current_user_id)):
-    '''
-    WiFi로 GOYO 라즈베리파이 디바이스 검색 (mDNS)
-    Reference 마이크 + Error 마이크 + 스피커 포함된 복합 디바이스
-    '''
-    try:
-        devices = DeviceService.discover_goyo_devices()
-        return devices
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
-
 @router.post("/pair", response_model=DeviceResponse, status_code=status.HTTP_201_CREATED)
 def pair_device(
     device_data: DevicePair,
@@ -36,9 +20,8 @@ def pair_device(
     user_id: int = Depends(get_current_user_id)
 ):
     '''
-    GOYO 디바이스 페어링
+    GOYO 디바이스 페어링 (앱에서 디바이스 검색 및 MQTT 설정 완료 후 호출)
     - DB에 디바이스 등록
-    - 라즈베리파이에 MQTT 브로커 정보 전달
     - 라즈베리파이가 MQTT 연결 시 is_connected = True
     '''
     try:
