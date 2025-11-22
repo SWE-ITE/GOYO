@@ -28,25 +28,25 @@ class MQTTSubscriber:
     def on_connect(self, client, userdata, flags, rc):
         """MQTT 브로커 연결 시 호출"""
         if rc == 0:
-            logger.info("✅ AI Server connected to MQTT Broker")
+            logger.info("✅ ANC Server connected to MQTT Broker")
             self.is_connected = True
 
             # 오디오 토픽 구독
             client.subscribe("mqtt/audio/reference/#", qos=1)
             client.subscribe("mqtt/audio/error/#", qos=1)
-            client.subscribe("mqtt/control/ai/#", qos=1)
+            client.subscribe("mqtt/control/anc/#", qos=1)
 
             logger.info("📡 Subscribed to MQTT topics:")
             logger.info("   - mqtt/audio/reference/#")
             logger.info("   - mqtt/audio/error/#")
-            logger.info("   - mqtt/control/ai/#")
+            logger.info("   - mqtt/control/anc/#")
         else:
             logger.error(f"❌ Failed to connect to MQTT Broker, return code {rc}")
             self.is_connected = False
 
     def on_disconnect(self, client, userdata, rc):
         """MQTT 브로커 연결 해제 시 호출"""
-        logger.warning(f"⚠️ AI Server disconnected from MQTT Broker (rc: {rc})")
+        logger.warning(f"⚠️ ANC Server disconnected from MQTT Broker (rc: {rc})")
         self.is_connected = False
 
         if rc != 0:
@@ -77,7 +77,7 @@ class MQTTSubscriber:
                     logger.warning("No handler for error audio")
 
             # 제어 명령
-            elif "control/ai" in topic:
+            elif "control/anc" in topic:
                 if self.on_control:
                     self.on_control(payload)
                 else:
@@ -92,7 +92,7 @@ class MQTTSubscriber:
         """MQTT 브로커에 연결"""
         try:
             self.client = mqtt.Client(
-                client_id="goyo-ai-server-subscriber",
+                client_id="goyo-anc-server-subscriber",
                 clean_session=False
             )
 
@@ -110,7 +110,7 @@ class MQTTSubscriber:
 
             # Will 메시지 설정
             self.client.will_set(
-                "mqtt/status/ai-server/subscriber",
+                "mqtt/status/anc-server/subscriber",
                 json.dumps({"status": "offline"}),
                 qos=1,
                 retain=True
@@ -155,11 +155,11 @@ class MQTTSubscriber:
             logger.info("🛑 MQTT Subscriber stopped")
 
     def publish_status(self, status: str):
-        """AI Server 상태 발행"""
+        """ANC Server 상태 발행"""
         if self.client:
             try:
                 self.client.publish(
-                    "mqtt/status/ai-server/subscriber",
+                    "mqtt/status/anc-server/subscriber",
                     json.dumps({
                         "status": status,
                         "timestamp": time.time()

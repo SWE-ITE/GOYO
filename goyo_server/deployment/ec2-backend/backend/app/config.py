@@ -14,9 +14,9 @@ class Settings(BaseSettings):
     MQTT_BROKER: Optional[str] = None  # Deprecated, use MQTT_BROKER_HOST
     MQTT_PORT: Optional[int] = None  # Deprecated, use MQTT_BROKER_PORT
 
-    # AI Server
-    AI_SERVER_HOST: str = "localhost"
-    AI_SERVER_PORT: int = 8001
+    # ANC Server
+    ANC_SERVER_HOST: str = "localhost"
+    ANC_SERVER_PORT: int = 8001
 
     # Security
     SECRET_KEY: str

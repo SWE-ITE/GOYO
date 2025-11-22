@@ -1,5 +1,5 @@
 """
-GOYO AI Server - Main Application
+GOYO ANC Server - Main Application
 Real-time audio processing and ANC signal generation
 """
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # FastAPI app
 app = FastAPI(
-    title="GOYO AI Server",
+    title="GOYO ANC Server",
     description="Real-time audio processing and Active Noise Control",
     version="3.5.0"
 )
@@ -49,7 +49,7 @@ active_connections: Dict[str, WebSocket] = {}
 @app.on_event("startup")
 async def startup_event():
     """서버 시작 시 초기화"""
-    logger.info("🚀 GOYO AI Server starting...")
+    logger.info("🚀 GOYO ANC Server starting...")
 
     # MQTT Publisher 연결
     try:
@@ -72,13 +72,13 @@ async def startup_event():
     audio_processor.initialize()
     logger.info("✅ Audio Processor initialized")
 
-    logger.info("🎉 GOYO AI Server ready!")
+    logger.info("🎉 GOYO ANC Server ready!")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """서버 종료 시 정리"""
-    logger.info("🛑 GOYO AI Server shutting down...")
+    logger.info("🛑 GOYO ANC Server shutting down...")
 
     # MQTT Publisher 연결 해제
     try:
@@ -226,7 +226,7 @@ def handle_anc_control(data: dict):
 async def root():
     """Health check"""
     return {
-        "service": "GOYO AI Server",
+        "service": "GOYO ANC Server",
         "status": "running",
         "version": "1.0.0"
     }

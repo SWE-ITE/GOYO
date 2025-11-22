@@ -1,16 +1,16 @@
 """
-GOYO AI Server Configuration
+GOYO ANC Server Configuration
 """
 from pydantic_settings import BaseSettings
 from typing import Optional
 
 
 class Settings(BaseSettings):
-    """AI 서버 환경 설정"""
-    
+    """ANC 서버 환경 설정"""
+
     # Server
-    AI_SERVER_HOST: str = "0.0.0.0"
-    AI_SERVER_PORT: int = 8001
+    ANC_SERVER_HOST: str = "0.0.0.0"
+    ANC_SERVER_PORT: int = 8001
 
     # MQTT
     MQTT_BROKER_HOST: str = "localhost"

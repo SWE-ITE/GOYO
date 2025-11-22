@@ -22,19 +22,19 @@ class MQTTPublisher:
     def on_connect(self, client, userdata, flags, rc):
         """MQTT 브로커 연결 시 호출"""
         if rc == 0:
-            logger.info("✅ AI Server connected to MQTT Broker")
+            logger.info("✅ ANC Server connected to MQTT Broker")
             self.is_connected = True
 
             # 제어 명령 구독 (필요 시)
-            client.subscribe("mqtt/control/ai/#", qos=1)
-            logger.info("📡 Subscribed to mqtt/control/ai/#")
+            client.subscribe("mqtt/control/anc/#", qos=1)
+            logger.info("📡 Subscribed to mqtt/control/anc/#")
         else:
             logger.error(f"❌ Failed to connect to MQTT Broker, return code {rc}")
             self.is_connected = False
 
     def on_disconnect(self, client, userdata, rc):
         """MQTT 브로커 연결 해제 시 호출"""
-        logger.warning(f"⚠️ AI Server disconnected from MQTT Broker (rc: {rc})")
+        logger.warning(f"⚠️ ANC Server disconnected from MQTT Broker (rc: {rc})")
         self.is_connected = False
 
         if rc != 0:
@@ -57,7 +57,7 @@ class MQTTPublisher:
     def connect(self):
         """MQTT 브로커에 연결"""
         try:
-            self.client = mqtt.Client(client_id="goyo-ai-server", clean_session=False)
+            self.client = mqtt.Client(client_id="goyo-anc-server", clean_session=False)
 
             # 인증 설정
             if settings.MQTT_USERNAME and settings.MQTT_PASSWORD:
@@ -73,7 +73,7 @@ class MQTTPublisher:
 
             # Will 메시지 설정
             self.client.will_set(
-                "mqtt/status/ai-server",
+                "mqtt/status/anc-server",
                 json.dumps({"status": "offline"}),
                 qos=1,
                 retain=True
@@ -194,7 +194,7 @@ class MQTTPublisher:
 
         try:
             self.client.publish(
-                "mqtt/status/ai-server",
+                "mqtt/status/anc-server",
                 json.dumps(payload),
                 qos=1,
                 retain=True
