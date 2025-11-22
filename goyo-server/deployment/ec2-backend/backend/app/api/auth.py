@@ -31,22 +31,19 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
             detail="Password must be at least 8 characters"
         )
     
-    # Create user
-    verification_token = generate_verification_token()
+    # Create user (auto-verified for development)
     new_user = User(
         email=user_data.email,
         hashed_password=get_password_hash(password),
         name=user_data.name,
-        verification_token=verification_token
+        is_verified=True,  # 개발 편의를 위해 자동 인증
+        is_active=True
     )
-    
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    
-    # TODO: Send verification email
-    # send_verification_email(user_data.email, verification_token)
-    
+
     return new_user
 
 @router.post("/login", response_model=Token)

@@ -9,8 +9,8 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     name = Column(String, nullable=False)
-    is_active = Column(Boolean, default=False)
-    is_verified = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)  # 개발 편의를 위해 자동 활성화
+    is_verified = Column(Boolean, default=True)  # 개발 편의를 위해 자동 인증
     verification_token = Column(String, nullable=True)
     
     # ANC Settings
