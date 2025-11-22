@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, devices, profile, audio
+from app.api import auth, devices, profile, home
 from app.database import engine, Base
 from app.services.mqtt_service import mqtt_service
 import logging
@@ -34,7 +34,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(devices.router)
 app.include_router(profile.router)
-app.include_router(audio.router, prefix="/api/audio", tags=["audio"])
+app.include_router(home.router)
 
 @app.get("/")
 def root():
