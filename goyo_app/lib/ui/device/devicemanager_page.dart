@@ -48,9 +48,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   late ApiService _api;
   bool _initialLoading = true;
   bool _scanningWifi = false;
-  bool _calibrating = false;
   List<DeviceDto> _devices = const [];
-  MicrophoneSetup? _setup;
   bool _iotScanning = false;
   List<DeviceDto> _iotDevices = const [];
 
@@ -60,7 +58,6 @@ class _DeviceManagerPageState extends State<DeviceManager> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _api = context.read<ApiService>();
       _loadDevices();
-      _loadSetup();
       _loadDemoIotDevices();
     });
   }
@@ -75,15 +72,6 @@ class _DeviceManagerPageState extends State<DeviceManager> {
       _showSnack('디바이스 목록을 불러올 수 없습니다: $e', isError: true);
     } finally {
       if (mounted) setState(() => _initialLoading = false);
-    }
-  }
-
-  Future<void> _loadSetup() async {
-    try {
-      final data = await _api.getMicrophoneSetup();
-      if (mounted) setState(() => _setup = data);
-    } catch (e) {
-      _showSnack('마이크 구성을 불러올 수 없습니다: $e', isError: true);
     }
   }
 
@@ -123,7 +111,6 @@ class _DeviceManagerPageState extends State<DeviceManager> {
                         ? null
                         : () {
                             _loadDevices();
-                            _loadSetup();
                           },
                     icon: const Icon(Icons.refresh),
                   ),
@@ -131,42 +118,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
               ),
             ),
             const Divider(height: 1),
-            if (_setup != null)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Card(
-                  child: ListTile(
-                    title: const Text('마이크 구성 상태'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
-                        Text('송신 마이크: ${_setup!.sourceMicrophone ?? '미지정'}'),
-                        Text('참조 마이크: ${_setup!.referenceMicrophone ?? '미지정'}'),
-                        Text('스피커: ${_setup!.speaker ?? '미지정'}'),
-                        const SizedBox(height: 4),
-                        Text(
-                          _setup!.isReady ? '준비 완료' : '구성이 필요합니다',
-                          style: TextStyle(
-                            color: _setup!.isReady ? cs.primary : cs.error,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: FilledButton.tonal(
-                      onPressed: _calibrating ? null : _calibrateIfPossible,
-                      child: _calibrating
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Calibrate'),
-                    ),
-                  ),
-                ),
-              ),
+
             Expanded(
               child: _initialLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -234,24 +186,12 @@ class _DeviceManagerPageState extends State<DeviceManager> {
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       switch (value) {
-                        case 'source':
-                          _assignRole(_devices[i], 'microphone_source');
-                          break;
-                        case 'reference':
-                          _assignRole(_devices[i], 'microphone_reference');
-                          break;
                         case 'delete':
                           _deleteByDeviceId(_devices[i].deviceId);
                           break;
                       }
                     },
                     itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'source', child: Text('송신 마이크로 지정')),
-                      PopupMenuItem(
-                        value: 'reference',
-                        child: Text('참조 마이크로 지정'),
-                      ),
-                      PopupMenuDivider(),
                       PopupMenuItem(value: 'delete', child: Text('삭제')),
                     ],
                   ),
@@ -465,7 +405,6 @@ class _DeviceManagerPageState extends State<DeviceManager> {
         _devices = updated;
       });
       _showSnack('"${device.deviceName}"이(가) 연결되었습니다.');
-      await _loadSetup();
     } catch (e) {
       _showSnack('디바이스 연결에 실패했습니다: $e', isError: true);
     } finally {
@@ -526,7 +465,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
           _devices = updated;
         }
       });
-      await _loadSetup();
+
       if (navigator.canPop()) navigator.pop();
       if (!mounted) return;
       showModalBottomSheet<void>(
@@ -603,66 +542,6 @@ class _DeviceManagerPageState extends State<DeviceManager> {
     );
   }
 
-  Future<void> _assignRole(DeviceDto device, String role) async {
-    try {
-      final result = await _api.assignMicrophoneRole(
-        deviceId: device.deviceId,
-        role: role,
-      );
-      if (!mounted) return;
-      setState(() {
-        final idx = _devices.indexWhere((d) => d.deviceId == device.deviceId);
-        if (idx != -1) {
-          final updated = List<DeviceDto>.from(_devices);
-          updated[idx] = updated[idx].copyWith(deviceType: result.deviceType);
-          _devices = updated;
-        }
-      });
-      await _loadSetup();
-      _showSnack(result.message.isEmpty ? '마이크 역할이 변경되었습니다.' : result.message);
-    } catch (e) {
-      _showSnack('마이크 역할 변경 실패: $e', isError: true);
-    }
-  }
-
-  Future<void> _calibrateIfPossible() async {
-    final source = _firstDeviceOfType('microphone_source');
-    final reference = _firstDeviceOfType('microphone_reference');
-
-    if (source == null || reference == null) {
-      _showSnack('송신/참조 마이크를 먼저 지정해주세요.', isError: true);
-      return;
-    }
-
-    setState(() => _calibrating = true);
-    try {
-      final result = await _api.calibrateDualMicrophones(
-        sourceDeviceId: source.deviceId,
-        referenceDeviceId: reference.deviceId,
-      );
-      if (!mounted) return;
-      setState(() {
-        _devices = _devices
-            .map(
-              (d) =>
-                  (d.deviceId == source.deviceId ||
-                      d.deviceId == reference.deviceId)
-                  ? d.copyWith(isCalibrated: true)
-                  : d,
-            )
-            .toList();
-      });
-      await _loadSetup();
-      _showSnack(
-        '캘리브레이션 완료 (delay: ${result.timeDelay?.toStringAsFixed(3) ?? '-'}초)',
-      );
-    } catch (e) {
-      _showSnack('캘리브레이션 실패: $e', isError: true);
-    } finally {
-      if (mounted) setState(() => _calibrating = false);
-    }
-  }
-
   Future<void> _deleteByDeviceId(String deviceId) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -687,7 +566,6 @@ class _DeviceManagerPageState extends State<DeviceManager> {
       await _api.deleteDevice(deviceId);
       if (!mounted) return;
       setState(() => _devices.removeWhere((d) => d.deviceId == deviceId));
-      await _loadSetup();
       _showSnack('디바이스를 삭제했습니다.');
     } catch (e) {
       _showSnack('디바이스 삭제 실패: $e', isError: true);

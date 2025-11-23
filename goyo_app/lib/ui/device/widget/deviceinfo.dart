@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:goyo_app/data/models/device_models.dart';
+import 'package:goyo_app/data/services/api_service.dart';
+import 'package:provider/provider.dart';
 
 class DeviceInfo extends StatelessWidget {
   final DeviceDto device;
@@ -27,8 +29,63 @@ class DeviceInfo extends StatelessWidget {
     );
 
     if (ok == true) {
-      // 결과에 삭제된 id를 담아서 반환
-      Navigator.pop(context, {'deletedId': device.id});
+      Navigator.pop(context, {'deletedId': device.deviceId});
+    }
+  }
+
+  Future<void> _checkStatus(BuildContext context) async {
+    final api = context.read<ApiService>();
+    final navigator = Navigator.of(context, rootNavigator: true);
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: SizedBox(
+          height: 96,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('디바이스 상태를 확인하고 있어요...'),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final status = await api.getDeviceStatus(device.deviceId);
+      if (navigator.canPop()) navigator.pop();
+      if (context.mounted) {
+        showModalBottomSheet<void>(
+          context: context,
+          builder: (_) => Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(device.deviceName,
+                    style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text('연결: ${status.isConnected ? 'ON' : 'OFF'}'),
+                Text('캘리브레이션: ${status.isCalibrated ? '완료' : '필요'}'),
+                Text('유형: ${status.deviceType}'),
+                if (status.redisStatus != null)
+                  Text('메타: ${status.redisStatus}'),
+              ],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (navigator.canPop()) navigator.pop();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('상태 확인 실패: $e')),
+        );
+      }
     }
   }
 
@@ -72,16 +129,8 @@ class DeviceInfo extends StatelessWidget {
             children: [
               Expanded(
                 child: FilledButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isConn ? 'Demo: Disconnect' : 'Demo: Connect',
-                        ),
-                      ),
-                    );
-                  },
-                  child: Text(isConn ? 'Disconnect' : 'Connect'),
+                   onPressed: () => _checkStatus(context),
+                  child: const Text('Check status'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -102,6 +151,12 @@ class DeviceInfo extends StatelessWidget {
 
 IconData _iconForType(String type) {
   switch (type) {
+    case 'microphone_source':
+      return Icons.mic_outlined;
+    case 'microphone_reference':
+      return Icons.mic_external_on_outlined;
+    case 'speaker':
+      return Icons.speaker;
     case 'refrigerator':
       return Icons.kitchen;
     case 'tv':
@@ -117,6 +172,12 @@ IconData _iconForType(String type) {
 
 String _deviceTypeLabel(String type) {
   switch (type) {
+    case 'microphone_source':
+      return '송신 마이크';
+    case 'microphone_reference':
+      return '참조 마이크';
+    case 'speaker':
+      return '스피커';
     case 'refrigerator':
       return '냉장고';
     case 'tv':
