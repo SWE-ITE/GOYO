@@ -220,4 +220,59 @@ extension DeviceManagementApi on ApiService {
       throw Exception('Failed to delete device: $msg');
     }
   }
+
+  Future<MicrophoneSetup> getMicrophoneSetup() async {
+    try {
+      final res = await _dio.get('/api/devices/setup');
+      return MicrophoneSetup.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final msg = e.response?.data ?? e.message;
+      throw Exception('마이크 구성을 불러올 수 없습니다: $msg');
+    }
+  }
+
+  Future<DeviceStatus> getDeviceStatus(String deviceId) async {
+    try {
+      final res = await _dio.get('/api/devices/status/$deviceId');
+      return DeviceStatus.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final msg = e.response?.data ?? e.message;
+      throw Exception('디바이스 상태를 가져오지 못했습니다: $msg');
+    }
+  }
+
+  Future<RoleAssignmentResult> assignMicrophoneRole({
+    required String deviceId,
+    required String role,
+  }) async {
+    try {
+      final res = await _dio.put(
+        '/api/devices/microphone/$deviceId/role',
+        data: {'role': role},
+      );
+      return RoleAssignmentResult.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final msg = e.response?.data ?? e.message;
+      throw Exception('마이크 역할 지정에 실패했습니다: $msg');
+    }
+  }
+
+  Future<CalibrationResult> calibrateDualMicrophones({
+    required String sourceDeviceId,
+    required String referenceDeviceId,
+  }) async {
+    try {
+      final res = await _dio.post(
+        '/api/devices/calibrate/dual-mic',
+        queryParameters: {
+          'source_device_id': sourceDeviceId,
+          'reference_device_id': referenceDeviceId,
+        },
+      );
+      return CalibrationResult.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final msg = e.response?.data ?? e.message;
+      throw Exception('듀얼 마이크 캘리브레이션 실패: $msg');
+    }
+  }
 }
