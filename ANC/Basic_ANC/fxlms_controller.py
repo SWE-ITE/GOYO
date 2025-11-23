@@ -1,17 +1,3 @@
-"""
-FxLMS-based Active Noise Control helper.
-
-This module streams a prerecorded noise track, computes an anti-noise signal
-with the filtered-x LMS algorithm, and plays the anti-noise through a speaker
-while adapting the control filter using feedback from an error microphone that
-is positioned at the listener's ear location.
-
-The implementation favours clarity over raw performance so you can iterate on
-the DSP without diving into C extensions. The core loop operates on short
-blocks (default: 256 samples) and keeps per-sample state to perform the
-filtered-x weight updates.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -70,79 +56,7 @@ def read_mono_wav(path: str) -> Tuple[np.ndarray, int]:
 
 
 class FxLMSANC:
-    """
-    Filtered-x LMS controller for single-channel ANC.
-
-    Parameters
-    ----------
-    reference_path:
-        Optional WAV path for the prerecorded noise reference signal. Omit this
-        when providing ``reference_input_device_index`` for a live microphone
-        reference.
-    sample_rate:
-        Desired operating sample rate. If None, the reference file's rate is used.
-        Required when using a live reference microphone.
-    filter_length:
-        Number of taps in the adaptive control filter.
-    step_size:
-        Normalised LMS step size (mu). Smaller values converge slower but are safer.
-    block_size:
-        Number of samples per processing block.
-    secondary_path:
-        FIR coefficients modelling the speaker→error mic transfer function.
-        Provide a 1-D NumPy array. If omitted, an identity path is used.
-    control_device_index:
-        PyAudio output device index for the anti-noise signal (speaker near user).
-    record_device_index:
-        Optional PyAudio input device index.
-    reference_device_index:
-        Optional PyAudio output device index for the primary noise playback.
-        Provide this when you need to feed the original noise into a separate
-        loudspeaker. If omitted and ``play_reference`` is True, the reference
-        signal is mixed into the control speaker instead (legacy behaviour).
-    reference_input_device_index:
-        PyAudio input device index for a live reference microphone. When
-        provided, the controller ignores ``reference_path`` and continuously
-        samples this device for the reference signal.
-    error_channel_index:
-        Channel index on ``record_device_index`` containing the error microphone.
-        Defaults to 0 for single-channel devices.
-    reference_channel_index:
-        Optional channel index on ``record_device_index`` that carries the live
-        reference microphone. Use this when both microphones are exposed through
-        the same aggregate input device. When provided, no separate
-        ``reference_input_device_index`` is required.
-    split_reference_channels:
-        When True, the control output is stereo with the reference on the left
-        channel and the anti-noise on the right channel. Use this to drive both
-        signals from a single physical speaker interface.
-    play_reference:
-        If True, the primary noise is audible. Either written to the dedicated
-        reference speaker (when ``reference_device_index`` is set) or mixed into
-        the control speaker output.
-    control_output_gain:
-        Scalar applied to the anti-noise signal before it is written to the
-        control speaker. Use this to trim output level without changing the LMS
-        step size.
-    control_output_channel:
-        Output channel index on the control device to receive anti-noise.
-    reference_output_channel:
-        Output channel index on the reference playback device when
-        ``play_reference`` is True.
-    normalize_step:
-        Deprecated; NLMS is always used.
-    require_reference:
-        When False, allows constructing the controller without any reference
-        source. This is intended for secondary-path measurement workflows that
-        only need playback+record functionality.
-    leakage:
-        Optional weight leakage (0..1) applied each update to prevent weight
-        drift in NLMS. Set to 0 for no leakage.
-    manual_gain_mode:
-        When True, bypass adaptation and output ``manual_gain * reference``.
-    manual_gain:
-        Scalar gain applied in ``manual_gain_mode``.
-    """
+    """Adaptive ANC controller using the Filtered-x LMS algorithm."""
 
     def __init__(
         self,
@@ -176,8 +90,7 @@ class FxLMSANC:
             and require_reference
         ):
             raise ValueError(
-                "Provide reference_path or a live reference source (reference_input_device_index "
-                "or reference_channel_index)."
+                "Provide reference_path or a live reference source (reference_input_device_index or reference_channel_index)."
             )
 
         if (
@@ -435,15 +348,6 @@ class FxLMSANC:
     ) -> None:
         """
         Execute the adaptive control loop.
-
-        Parameters
-        ----------
-        loop_reference:
-            If True, restarts the reference audio when it reaches the end.
-        max_duration:
-            Optional wall-clock limit in seconds.
-        metrics_callback:
-            Optional callable invoked once per block with AncMetrics data.
         """
         self._open_streams()
         self._reset_state()
@@ -594,10 +498,6 @@ class FxLMSANC:
     ) -> np.ndarray:
         """
         Excite the secondary path (speaker→mic) and estimate an FIR model.
-
-        This sends white noise to the speaker for the requested duration,
-        records the response at the error microphone, and solves a least-squares
-        problem to approximate the impulse response.
         """
         self._open_streams()
 

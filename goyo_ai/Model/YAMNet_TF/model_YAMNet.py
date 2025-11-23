@@ -31,28 +31,14 @@ def scan_dataset(dataset_path, class_names):
 
 SAMPLE_RATE = 16000
 AUDIO_LENGTH_SAMPLES = 15600 # YAMNet의 윈도우 크기에 맞춘 값 (0.975초)
-DATASET_PATH = Path(__file__).resolve().parent.parent / 'Dataset' / 'Final_dataset'
+DATASET_PATH = Path(__file__).resolve().parent.parent.parent / 'Dataset' / 'Final_dataset'
 CLASS_NAMES = [
     'Air_conditioner',
-    'Air_plane',
-    'Background',
-    'Car_horn', 
-    'Children_playing',
-    'Clock_tick',
-    'Dog_bark', 
-    'Drilling', 
-    'Engine_idling',
-    'Fan',
     'Hair_dryer',
-    'Jackhammer', 
-    'Keyboard_typing',
-    'Rain',
-    'Refrigerator_Hum',
-    'Siren', 
-    'Snoring',
-    'Train',
+    'Microwave',
+    'Others', 
+    'Refrigerator_Hum', 
     'Vacuum',
-    'Washing_machine'
 ]
 NOISE_CLASSES = len(CLASS_NAMES)
 
@@ -63,7 +49,7 @@ def build_finetuned_model(NOISE_CLASSES):
 
     #은닉층
     x = tf.keras.layers.Dense(256, activation='relu', name='hidden_layer')(flattened_embeddings)
-    x = tf.keras.layers.Dropout(0.3)(x) 
+    x = tf.keras.layers.Dropout(0.5)(x) 
 
     outputs = tf.keras.layers.Dense(NOISE_CLASSES, activation='softmax', name='custom_classifier')(x)
     model = tf.keras.Model(inputs=inputs, outputs=outputs, name='yamnet_finetuned_v2')
@@ -86,8 +72,6 @@ train_files, val_files, train_labels, val_labels = train_test_split(
     random_state=42, 
     stratify=all_labels #원본의 클래스 비율을 유지하며 분리
 )
-
-print(f"총 파일: {len(all_files)} -> 훈련용: {len(train_files)}, 검증용: {len(val_files)}")
 
 # 클래스 불균형을 고려하여 훈련 데이터 라벨만 사용해서 가중치 계산
 class_weights = class_weight.compute_class_weight(
@@ -132,15 +116,51 @@ checkpoint_cb = ModelCheckpoint(
 )
 
 #start training
-print("\n훈련 시작")
+print("\n[Phase 1]")
+# 모델 컴파일 (높은 학습률)
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+              loss='sparse_categorical_crossentropy', 
+              metrics=['accuracy'])
+
 model.fit(
     train_generator,
-    epochs=100,
-    batch_size=None, # 제너레이터가 배치 크기를 관리하므로 None 혹은 BATCH_SIZE
+    epochs=20, # phase1은 20 에폭만 진행
     class_weight=class_weight_dict,
-    validation_data=val_generator, 
+    validation_data=val_generator,
     callbacks=[checkpoint_cb],
     steps_per_epoch=len(train_generator),
     validation_steps=len(val_generator)
 )
-print("훈련 완료")
+
+print("[Phase 2](Unfreeze Backbone)")
+
+yamnet_found = False
+for layer in model.layers:
+    # 레이어 이름에 'yamnet'이 있거나 타입이 YAMNetLayer면 품.
+    if 'yamnet' in layer.name.lower() or 'YAMNetLayer' in str(type(layer)):
+        layer.trainable = True
+        yamnet_found = True
+        print(f"-> Unfrozen Layer: {layer.name}")
+
+if not yamnet_found:
+    print("error: YAMNet 레이어를 찾지 못했습니다.")
+    model.trainable = True
+
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5),
+              loss='sparse_categorical_crossentropy', 
+              metrics=['accuracy'])
+
+early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+
+model.fit(
+    train_generator,
+    initial_epoch=20, # 20부터 이어서 시작
+    epochs=100,
+    class_weight=class_weight_dict,
+    validation_data=val_generator,
+    callbacks=[checkpoint_cb, early_stop], # 콜백 추가
+    steps_per_epoch=len(train_generator),
+    validation_steps=len(val_generator)
+)
+
+print("훈련 완료.")

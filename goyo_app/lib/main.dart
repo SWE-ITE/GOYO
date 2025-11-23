@@ -6,7 +6,9 @@ import 'package:goyo_app/ui/home/home_page.dart';
 import 'package:goyo_app/ui/login/login_page.dart';
 import 'package:goyo_app/ui/login/signup_page.dart';
 import 'package:goyo_app/ui/profile/profile_page.dart';
+import 'package:goyo_app/ui/splash/splash_page.dart';
 import 'package:provider/provider.dart';
+import 'package:goyo_app/ui/login/recovery_page.dart';
 import 'theme/app_theme.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -49,12 +51,14 @@ class GoyoApp extends StatelessWidget {
         theme: AppTheme.light(), // ✅ 공통 테마
         darkTheme: AppTheme.dark(), // ✅ 다크 테마(선택)
         themeMode: ThemeMode.light, // 시스템/다크 스위칭 가능
-        initialRoute: '/login',
+        initialRoute: '/splash',
         routes: {
+          '/splash': (_) => const SplashPage(),
           '/login': (_) => const LoginPage(),
           '/home': (_) => const HomePage(),
           '/profile': (_) => const ProfilePage(),
           '/signup': (_) => const SignUpPage(),
+          '/recover': (_) => const AccountRecoveryPage(),
         },
       ),
     );

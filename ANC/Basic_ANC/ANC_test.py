@@ -13,9 +13,7 @@ from typing import Optional
 
 from basic_ANC.session_utils import create_controller, play_reference
 
-# ---------------------------------------------------------------------------
-# Configuration (adjust for your setup)
-# ---------------------------------------------------------------------------
+# Configuration 
 REFERENCE_PATH = Path(__file__).resolve().parent / "src/sine_200Hz.wav"
 SECONDARY_PATH = Path(__file__).resolve().parent / "secondary_path.npy"
 
@@ -32,9 +30,6 @@ DURATION: Optional[float] = None  # Seconds; None runs until Ctrl+C
 # Choose between "anc" for adaptive cancellation or "reference" for raw playback.
 MODE = "reference"  # "anc" or "reference"
 
-# ---------------------------------------------------------------------------
-
-
 def validate_config() -> None:
     if MODE not in {"anc", "reference"}:
         raise ValueError(f"Unsupported MODE '{MODE}'. Use 'anc' or 'reference'.")
@@ -48,7 +43,6 @@ def validate_config() -> None:
         raise ValueError("BLOCK_SIZE must be positive.")
     if FILTER_LENGTH is not None and FILTER_LENGTH <= 0:
         raise ValueError("FILTER_LENGTH must be positive.")
-
 
 def run_anc() -> None:
     controller = create_controller(

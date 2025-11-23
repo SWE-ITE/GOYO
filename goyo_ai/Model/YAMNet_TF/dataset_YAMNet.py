@@ -50,14 +50,31 @@ class SoundDataGenerator(Sequence):
                     
                 #augment
                 if self.augment:
-                    if np.random.rand() > 0.5:
-                        wav_data = add_noise(wav_data, noise_factor=np.random.uniform(0.001, 0.005))
-                    if np.random.rand() > 0.3:
-                        wav_data = pitch_shift(wav_data, self.sample_rate, n_steps=np.random.randint(-2, 3))
-                    if np.random.rand() > 0.3:
-                        wav_data = mask_time(wav_data)
-                    if np.random.rand() > 0.7:
-                        wav_data = mask_freq(wav_data)
+                    # 현재 데이터의 클래스 이름 확인
+                    current_class = self.class_names[label]
+
+                    # [그룹 A] 타겟 가전제품 (Microwave, Vacuum 등)
+                    # 데이터가 적어서 복사본이 많음 -> 과적합 방지 위해 '강한 증강' 필수
+                    if current_class != 'Others':
+                        if np.random.rand() > 0.5:
+                            wav_data = add_noise(wav_data, noise_factor=np.random.uniform(0.001, 0.005))
+                        if np.random.rand() > 0.3:
+                            wav_data = pitch_shift(wav_data, self.sample_rate, n_steps=np.random.randint(-2, 3))
+                        if np.random.rand() > 0.3:
+                            wav_data = mask_time(wav_data)
+                        if np.random.rand() > 0.7:
+                            wav_data = mask_freq(wav_data)
+                
+                    else:
+                        # Others는 이미 데이터셋이 다양하기 때문에 약한 증강
+                        if np.random.rand() > 0.8:
+                            wav_data = add_noise(wav_data, noise_factor=np.random.uniform(0.001, 0.005))
+                        if np.random.rand() > 0.8:
+                            wav_data = pitch_shift(wav_data, self.sample_rate, n_steps=np.random.randint(-2, 3))
+                        if np.random.rand() > 0.8:
+                            wav_data = mask_time(wav_data)
+                        if np.random.rand() > 0.8:
+                            wav_data = mask_freq(wav_data)
                         
                 if len(wav_data) < self.target_length: #15600보다 짧을 때 zero-padding
                     wav_data = np.pad(wav_data, (0, self.target_length - len(wav_data)))

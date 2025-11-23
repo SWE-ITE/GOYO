@@ -1,0 +1,14 @@
+[Unit]
+Description=GOYO Audio Capture Service (MQTT Client)
+After=network.target
+
+[Service]
+Type=simple
+User=hoyoungchung
+WorkingDirectory=/home/hoyoungchung/goyo
+ExecStart=/home/hoyoungchung/goyo/venv/bin/python3 /home/hoyoungchung/goyo/audio_client.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

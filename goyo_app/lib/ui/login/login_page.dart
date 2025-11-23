@@ -154,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
                     TextButton(
                       onPressed: loading
                           ? null
-                          : () => Navigator.of(context).pushNamed('/signup'),
+                          : () => Navigator.of(context).pushNamed('/recover'),
                       child: const Text('ID/PW 찾기'),
                     ),
                   ],

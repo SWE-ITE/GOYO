@@ -1,7 +1,6 @@
 import numpy as np
 import librosa
 
-#for data augmentation
 def add_noise(audio_data, noise_factor=0.005): #add noise
     noise = np.random.randn(len(audio_data))
     augmented_data = audio_data + noise_factor * noise

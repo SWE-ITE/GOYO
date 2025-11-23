@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: goyo-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://goyo_user:goyo_password_2025@postgres:5432/goyo_db
+      - MQTT_BROKER_HOST=mosquitto
+      - MQTT_BROKER_PORT=1883
+      - MQTT_USERNAME=goyo_backend
+      - MQTT_PASSWORD=backend_mqtt_pass_2025
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      - AI_SERVER_HOST=172.31.36.71
+      - AI_SERVER_PORT=8001
+    depends_on:
+      - postgres
+      - mosquitto
+    restart: unless-stopped
+    networks:
+      - goyo_network
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: goyo-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/config/passwd:/mosquitto/config/passwd
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+    restart: unless-stopped
+    networks:
+      - goyo_network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: goyo-postgres
+    environment:
+      - POSTGRES_USER=goyo_user
+      - POSTGRES_PASSWORD=goyo_password_2025
+      - POSTGRES_DB=goyo_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - goyo_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U goyo_user -d goyo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  mosquitto_data:
+    driver: local
+  mosquitto_logs:
+    driver: local
+
+networks:
+  goyo_network:
+    driver: bridge

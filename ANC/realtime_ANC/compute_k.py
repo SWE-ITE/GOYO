@@ -14,7 +14,6 @@ import numpy as np
 
 from ANC.basic_ANC.session_utils import create_controller, play_reference
 
-# Hardcoded configuration (mirror of realtime_cli values)
 CONTROL_DEVICE: Optional[int] = 10  # Anti-noise playback device
 RECORD_DEVICE: Optional[int] = 10  # Aggregate device containing microphones
 REFERENCE_DEVICE: Optional[int] = 10  # Dedicated reference playback device

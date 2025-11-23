@@ -3,10 +3,8 @@ Dataset/
 audioset_tagging_cnn/
 YAMNet/
 
-checkpoints/
-*.pth
-*.keras
-*.h5
+checkpoints/*
+!checkpoints/best_model.keras
 
 venv/
 __pycache__/

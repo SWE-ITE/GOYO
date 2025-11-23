@@ -1,0 +1,17 @@
+# GOYO Raspberry Pi Client Dependencies
+
+# Audio
+pyaudio==0.2.14
+
+# MQTT
+paho-mqtt==1.6.1
+
+# Utilities
+python-dotenv==1.0.0
+
+# mDNS & HTTP Server
+zeroconf==0.132.2
+flask==3.0.0
+
+# AI/ML
+numpy==1.26.3
