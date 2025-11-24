@@ -38,6 +38,8 @@ dependencies:
   provider: ^6.1.5+1
   dio: ^5.9.0
   flutter_secure_storage: ^9.2.4
+  http: ^1.2.2
+  multicast_dns: ^0.3.3
 
 dev_dependencies:
   flutter_test:

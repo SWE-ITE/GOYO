@@ -73,6 +73,7 @@ class DiscoveredDevice {
   final String connectionType;
   final int? signalStrength;
   final String? ipAddress;
+  final int? port;
 
   const DiscoveredDevice({
     required this.deviceId,
@@ -81,6 +82,7 @@ class DiscoveredDevice {
     required this.connectionType,
     this.signalStrength,
     this.ipAddress,
+    this.port,
   });
 
   factory DiscoveredDevice.fromJson(Map<String, dynamic> json) {
@@ -91,6 +93,7 @@ class DiscoveredDevice {
       connectionType: json['connection_type'] as String? ?? 'wifi',
       signalStrength: json['signal_strength'] as int?,
       ipAddress: json['ip_address'] as String?,
+      port: json['port'] as int?,
     );
   }
 }
