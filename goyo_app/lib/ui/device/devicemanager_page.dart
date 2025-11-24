@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:goyo_app/core/config/env.dart';
 import 'package:goyo_app/data/models/device_models.dart';
 import 'package:goyo_app/data/services/api_service.dart';
+import 'package:goyo_app/data/services/goyo_device_service.dart';
+import 'package:goyo_app/features/auth/auth_provider.dart';
 import 'package:goyo_app/ui/device/widget/deviceinfo.dart';
 import 'package:provider/provider.dart';
 
@@ -53,6 +56,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   bool _smartChairReady = false;
   Map<String, dynamic>? _smartChairSetup;
   List<DeviceDto> _smartChairs = const [];
+  final GoyoDeviceService _goyoDeviceService = const GoyoDeviceService();
 
   @override
   void initState() {
@@ -393,10 +397,19 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   Future<void> _scanSmartChairs() async {
     setState(() => _smartChairScanning = true);
     try {
-      final api = context.read<ApiService>();
-      final available = await api.discoverWifiDevices();
-      final chairs =
-          available.where((d) => _isSmartChairType(d.deviceType)).toList();
+      List<DiscoveredDevice> chairs = [];
+      try {
+        chairs = await _goyoDeviceService.discoverSmartChairs();
+      } catch (e) {
+        _showSnack('로컬 네트워크 검색 중 문제가 발생했어요: $e', isError: true);
+      }
+
+      if (chairs.isEmpty) {
+        final api = context.read<ApiService>();
+        final available = await api.discoverWifiDevices();
+        chairs =
+            available.where((d) => _isSmartChairType(d.deviceType)).toList();
+      }
       if (chairs.isEmpty) {
         _showSnack('검색된 스마트 의자가 없습니다.');
         return;
@@ -458,6 +471,23 @@ class _DeviceManagerPageState extends State<DeviceManager> {
     );
 
     try {
+      final auth = context.read<AuthProvider>();
+      final me = auth.me;
+      if (me == null) {
+        throw Exception('로그인 정보를 불러오지 못했어요. 다시 로그인해주세요.');
+      }
+
+      final ipAddress = device.ipAddress;
+      if (ipAddress == null || ipAddress.isEmpty) {
+        throw Exception('디바이스 IP를 확인할 수 없습니다.');
+      }
+
+      await _goyoDeviceService.configureDevice(
+        device: device,
+        userId: me.id,
+        mqttBrokerHost: _mqttBrokerHost(),
+      );
+
       final api = context.read<ApiService>();
       final paired = await api.pairDevice(
         PairDeviceRequest(
@@ -466,7 +496,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
           deviceType:
               _isSmartChairType(device.deviceType) ? 'goyo_device' : device.deviceType,
           connectionType: device.connectionType,
-          ipAddress: device.ipAddress ?? '',
+          ipAddress: ipAddress,
         ),
       );
       if (!mounted) return;
@@ -616,7 +646,18 @@ class _DeviceManagerPageState extends State<DeviceManager> {
     if (ip != null && ip.isNotEmpty) {
       parts.add(ip);
     }
+    if (device.port != null) {
+      parts.add('Port ${device.port}');
+    }
     return parts.join(' • ');
+  }
+
+  String _mqttBrokerHost() {
+    final uri = Uri.tryParse(Env.baseUrl);
+    if (uri != null && uri.host.isNotEmpty) {
+      return uri.host;
+    }
+    return '3.36.205.186';
   }
 
   int _nextIotDeviceId() {
