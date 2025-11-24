@@ -7,6 +7,8 @@ class DeviceDto {
   final bool isConnected;
   final String connectionType;
   final bool isCalibrated;
+  final String? ipAddress;
+  final DateTime? createdAt;
 
   const DeviceDto({
     required this.id,
@@ -17,6 +19,8 @@ class DeviceDto {
     required this.isConnected,
     required this.connectionType,
     required this.isCalibrated,
+    this.ipAddress,
+    this.createdAt,
   });
 
   factory DeviceDto.fromJson(Map<String, dynamic> json) {
@@ -29,6 +33,10 @@ class DeviceDto {
       isConnected: json['is_connected'] as bool? ?? false,
       connectionType: json['connection_type'] as String? ?? 'wifi',
       isCalibrated: json['is_calibrated'] as bool? ?? false,
+      ipAddress: json['ip_address'] as String?,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String)
+          : null,
     );
   }
   DeviceDto copyWith({
@@ -40,6 +48,8 @@ class DeviceDto {
     bool? isConnected,
     String? connectionType,
     bool? isCalibrated,
+    String? ipAddress,
+    DateTime? createdAt,
   }) {
     return DeviceDto(
       id: id ?? this.id,
@@ -50,6 +60,8 @@ class DeviceDto {
       isConnected: isConnected ?? this.isConnected,
       connectionType: connectionType ?? this.connectionType,
       isCalibrated: isCalibrated ?? this.isCalibrated,
+      ipAddress: ipAddress ?? this.ipAddress,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }
@@ -88,12 +100,14 @@ class PairDeviceRequest {
   final String deviceName;
   final String deviceType;
   final String connectionType;
+  final String ipAddress;
 
   const PairDeviceRequest({
     required this.deviceId,
     required this.deviceName,
     required this.deviceType,
     required this.connectionType,
+    required this.ipAddress,
   });
 
   Map<String, dynamic> toJson() => {
@@ -101,6 +115,7 @@ class PairDeviceRequest {
     'device_name': deviceName,
     'device_type': deviceType,
     'connection_type': connectionType,
+    'ip_address': ipAddress,
   };
 }
 
@@ -111,6 +126,9 @@ class DeviceStatus {
   final bool isConnected;
   final bool isCalibrated;
   final Map<String, dynamic>? redisStatus;
+  final String? ipAddress;
+  final Map<String, dynamic>? components;
+  final DateTime? lastSeen;
 
   const DeviceStatus({
     required this.deviceId,
@@ -119,6 +137,9 @@ class DeviceStatus {
     required this.isConnected,
     required this.isCalibrated,
     this.redisStatus,
+    this.ipAddress,
+    this.components,
+    this.lastSeen,
   });
 
   factory DeviceStatus.fromJson(Map<String, dynamic> json) {
@@ -130,6 +151,12 @@ class DeviceStatus {
       isConnected: json['is_connected'] as bool? ?? false,
       isCalibrated: json['is_calibrated'] as bool? ?? false,
       redisStatus: redis is Map<String, dynamic> ? redis : null,
+      ipAddress: json['ip_address'] as String?,
+      components:
+          json['components'] is Map<String, dynamic> ? json['components'] : null,
+      lastSeen: json['last_seen'] != null
+          ? DateTime.tryParse(json['last_seen'] as String)
+          : null,
     );
   }
 }
