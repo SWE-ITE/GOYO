@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:goyo_app/features/anc/anc_store.dart';
 import 'package:provider/provider.dart';
+import 'package:goyo_app/data/services/api_service.dart';
 
 /// 홈 탭: ANC 토글 + 내가 규정한 소음 리스트
 class HomeTab extends StatefulWidget {
@@ -11,7 +12,10 @@ class HomeTab extends StatefulWidget {
 }
 
 class _HomeTabState extends State<HomeTab> {
-  bool ancOn = true;
+  bool? ancOn;
+  bool loadingAnc = false;
+  bool togglingAnc = false;
+  String? ancError;
 
   final List<NoiseRule> rules = [
     NoiseRule(title: '냉장고 소리', icon: Icons.kitchen, enabled: true),
@@ -20,10 +24,17 @@ class _HomeTabState extends State<HomeTab> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadAnc();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final anc = context.watch<AncStore>();
     final isFocus = anc.mode == AncMode.focus;
+    final isAncOn = ancOn ?? false;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -45,15 +56,15 @@ class _HomeTabState extends State<HomeTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        ancOn ? 'ANC ENABLED' : 'ANC DISABLED',
+                        isAncOn ? 'ANC ENABLED' : 'ANC DISABLED',
                         style: TextStyle(
-                          color: ancOn ? cs.primary : cs.onSurfaceVariant,
+                          color: isAncOn ? cs.primary : cs.onSurfaceVariant,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        ancOn
+                        isAncOn
                             ? 'Noise cancelling is active across your devices.'
                             : 'Toggle on to activate ambient noise control.',
                         style: TextStyle(color: cs.onSurfaceVariant),
@@ -62,13 +73,28 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                 ),
                 Switch(
-                  value: ancOn,
-                  onChanged: (v) => setState(() => ancOn = v),
+                  value: isAncOn,
+                  onChanged: (loadingAnc || togglingAnc)
+                      ? null
+                      : (v) => _toggleAnc(v),
                 ),
               ],
             ),
           ),
         ),
+        if (loadingAnc || togglingAnc)
+          const Padding(
+            padding: EdgeInsets.only(top: 6),
+            child: LinearProgressIndicator(minHeight: 3),
+          ),
+        if (ancError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              ancError!,
+              style: TextStyle(color: cs.error, fontSize: 12),
+            ),
+          ),
         if (isFocus)
           Padding(
             padding: const EdgeInsets.only(top: 6, bottom: 6),
@@ -90,6 +116,57 @@ class _HomeTabState extends State<HomeTab> {
         ),
       ],
     );
+  }
+
+  Future<void> _loadAnc() async {
+    setState(() {
+      loadingAnc = true;
+      ancError = null;
+    });
+
+    try {
+      final enabled = await context.read<ApiService>().getAncEnabled();
+      if (!mounted) return;
+      setState(() => ancOn = enabled);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => ancError = 'ANC 상태를 불러오지 못했습니다: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('ANC 상태를 불러오지 못했습니다: $e')));
+    } finally {
+      if (mounted) setState(() => loadingAnc = false);
+    }
+  }
+
+  Future<void> _toggleAnc(bool enabled) async {
+    if (togglingAnc || loadingAnc) return;
+    final previous = ancOn ?? false;
+
+    setState(() {
+      ancOn = enabled;
+      togglingAnc = true;
+      ancError = null;
+    });
+
+    try {
+      final result = await context.read<ApiService>().toggleAnc(
+        enabled: enabled,
+      );
+      if (!mounted) return;
+      setState(() => ancOn = result);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        ancOn = previous;
+        ancError = 'ANC 상태 변경 실패: $e';
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('ANC 상태 변경 실패: $e')));
+    } finally {
+      if (mounted) setState(() => togglingAnc = false);
+    }
   }
 }
 

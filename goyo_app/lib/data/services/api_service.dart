@@ -231,3 +231,39 @@ extension DeviceManagementApi on ApiService {
     }
   }
 }
+
+extension HomeApi on ApiService {
+  Future<bool> getAncEnabled() async {
+    try {
+      final res = await _dio.get('/api/home/anc');
+      final data = res.data;
+      if (data is Map<String, dynamic> && data['anc_enabled'] is bool) {
+        return data['anc_enabled'] as bool;
+      }
+      throw const FormatException('Invalid ANC payload');
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      final msg = _pretty(e.response?.data) ?? e.message;
+      throw Exception('ANC 상태를 불러오지 못했습니다 ($code): $msg');
+    }
+  }
+
+  Future<bool> toggleAnc({required bool enabled}) async {
+    try {
+      final res = await _dio.post(
+        '/api/home/anc/toggle',
+        data: {'enabled': enabled},
+      );
+      final data = res.data;
+      if (data is Map<String, dynamic> && data['anc_enabled'] is bool) {
+        return data['anc_enabled'] as bool;
+      }
+      // 일부 백엔드 구현에서 anc_enabled를 반환하지 않을 경우 요청한 enabled로 간주
+      return enabled;
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      final msg = _pretty(e.response?.data) ?? e.message;
+      throw Exception('ANC 상태 변경에 실패했습니다 ($code): $msg');
+    }
+  }
+}
