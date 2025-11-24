@@ -405,28 +405,22 @@ class _DeviceManagerPageState extends State<DeviceManager> {
       }
 
       if (chairs.isEmpty) {
-        final api = context.read<ApiService>();
-        final available = await api.discoverWifiDevices();
-        chairs =
-            available.where((d) => _isSmartChairType(d.deviceType)).toList();
-      }
-      if (chairs.isEmpty) {
-        _showSnack('검색된 스마트 의자가 없습니다.');
+        _showSnack('검색된 GOYO 디바이스가 없습니다. 같은 WiFi에 연결되어 있는지 확인해주세요.');
         return;
       }
 
       final selected = await _showDiscoveryDialog(
         chairs,
-        title: '스마트 의자 연결',
+        title: 'GOYO 디바이스 연결',
       );
       if (selected == null) {
-        _showSnack('스마트 의자 연결을 취소했어요.');
+        _showSnack('디바이스 연결을 취소했어요.');
         return;
       }
 
       await _pairSmartChair(selected);
     } catch (e) {
-      _showSnack('스마트 의자 검색에 실패했어요: $e', isError: true);
+      _showSnack('디바이스 검색에 실패했어요: $e', isError: true);
     } finally {
       if (mounted) setState(() => _smartChairScanning = false);
     }
