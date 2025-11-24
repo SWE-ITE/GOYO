@@ -43,23 +43,15 @@ class _DeviceManagerPageState extends State<DeviceManager> {
     ),
   ];
 
-  bool scanning = false;
-  bool _initialLoading = true;
-  List<DeviceDto> _devices = const [];
+  bool _iotScanning = false;
+  List<DeviceDto> _iotDevices = const [];
+  bool _smartChairScanning = false;
+  List<DeviceDto> _smartChairs = const [];
 
   @override
   void initState() {
     super.initState();
-    _loadDemoDevices();
-  }
-
-  Future<void> _loadDemoDevices() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    if (!mounted) return;
-    setState(() {
-      _devices = List<DeviceDto>.from(_demoDevices);
-      _initialLoading = false;
-    });
+    _iotDevices = List<DeviceDto>.from(_demoDevices);
   }
 
   @override
@@ -70,89 +62,247 @@ class _DeviceManagerPageState extends State<DeviceManager> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton.icon(
-                    onPressed: scanning ? null : _scanDevices,
-                    icon: scanning
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.wifi_tethering),
-                    label: Text(scanning ? 'Scanning...' : 'Scan Wi-Fi'),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: _initialLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _devices.isEmpty
-                  ? const Center(child: Text('등록된 오디오 디바이스가 없습니다.'))
-                  : ListView.separated(
-                      itemCount: _devices.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (context, i) {
-                        final d = _devices[i];
-                        final isConn = d.isConnected;
-
-                        return ListTile(
-                          leading: Icon(
-                            _iconForType(d.deviceType),
-                            color: cs.primary,
-                          ),
-                          title: Text(
-                            d.deviceName,
-                            style: const TextStyle(fontSize: 18),
-                          ),
-                          subtitle: Text(
-                            isConn ? 'Connected' : 'Not Connected',
-                            style: TextStyle(
-                              color: isConn ? cs.primary : cs.onSurfaceVariant,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.info_outline),
-                            onPressed: () async {
-                              final res = await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => DeviceInfo(device: d),
-                                ),
-                              );
-                              if (res is Map && res['deletedId'] == d.id) {
-                                setState(
-                                  () =>
-                                      _devices.removeWhere((x) => x.id == d.id),
-                                );
-                                _showSnack('Deleted "${d.deviceName}"');
-                              }
-                            },
-                          ),
-                          onTap: () => _handleDeviceTap(d),
-                        );
-                      },
-                    ),
-            ),
+            const SizedBox(height: 12),
+            _buildSmartChairSection(cs),
+            const Divider(height: 32),
+            _buildIotDemoSection(cs),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _scanDevices() async {
-    setState(() => scanning = true);
+  Widget _buildIotDemoSection(ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: cs.outlineVariant),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '기존 IoT 디바이스 (데모)',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  TextButton.icon(
+                    onPressed: _iotScanning ? null : _scanDemoIotDevices,
+                    icon: _iotScanning
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.wifi_tethering),
+                    label: Text(_iotScanning ? 'Scanning...' : 'Scan Wi-Fi'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (_iotDevices.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text('등록된 IoT 기기가 없습니다.'),
+                )
+              else
+                Column(
+                  children: [
+                    for (int i = 0; i < _iotDevices.length; i++) ...[
+                      ListTile(
+                        leading: Icon(
+                          _iconForType(_iotDevices[i].deviceType),
+                          color: cs.primary,
+                        ),
+                        title: Text(_iotDevices[i].deviceName),
+                        subtitle: Text(
+                          _iotDevices[i].isConnected
+                              ? 'Connected'
+                              : 'Not Connected',
+                          style: TextStyle(
+                            color: _iotDevices[i].isConnected
+                                ? cs.primary
+                                : cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.info_outline),
+                          onPressed: () async {
+                            final res = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    DeviceInfo(device: _iotDevices[i]),
+                              ),
+                            );
+                            if (res is Map &&
+                                res['deletedId'] == _iotDevices[i].deviceId) {
+                              setState(
+                                () => _iotDevices.removeWhere(
+                                  (x) => x.deviceId == _iotDevices[i].deviceId,
+                                ),
+                              );
+                              _showSnack(
+                                'Deleted "${_iotDevices[i].deviceName}"',
+                              );
+                            }
+                          },
+                        ),
+                        onTap: () => _handleIotDeviceTap(_iotDevices[i]),
+                      ),
+                      if (i != _iotDevices.length - 1)
+                        Divider(height: 1, color: cs.outlineVariant),
+                    ],
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSmartChairSection(ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: cs.outlineVariant),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '등록된 스마트 의자',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  TextButton.icon(
+                    onPressed: _smartChairScanning ? null : _scanSmartChairs,
+                    icon: _smartChairScanning
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.wifi_tethering),
+                    label: Text(
+                      _smartChairScanning ? 'Scanning...' : 'Scan Wi-Fi',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (_smartChairs.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text('등록된 스마트 의자가 없습니다.'),
+                )
+              else
+                Column(
+                  children: [
+                    for (int i = 0; i < _smartChairs.length; i++) ...[
+                      ListTile(
+                        leading: Icon(
+                          _iconForType(_smartChairs[i].deviceType),
+                          color: cs.primary,
+                        ),
+                        title: Text(_smartChairs[i].deviceName),
+                        subtitle: Text(
+                          _smartChairs[i].isConnected
+                              ? 'Connected'
+                              : 'Not Connected',
+                          style: TextStyle(
+                            color: _smartChairs[i].isConnected
+                                ? cs.primary
+                                : cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.info_outline),
+                          onPressed: () async {
+                            final res = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    DeviceInfo(device: _smartChairs[i]),
+                              ),
+                            );
+                            if (res is Map &&
+                                res['deletedId'] == _smartChairs[i].deviceId) {
+                              setState(
+                                () => _smartChairs.removeWhere(
+                                  (x) => x.deviceId == _smartChairs[i].deviceId,
+                                ),
+                              );
+                              _showSnack(
+                                'Deleted "${_smartChairs[i].deviceName}"',
+                              );
+                            }
+                          },
+                        ),
+                        onTap: () => _handleSmartChairTap(_smartChairs[i]),
+                      ),
+                      if (i != _smartChairs.length - 1)
+                        Divider(height: 1, color: cs.outlineVariant),
+                    ],
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _scanDemoIotDevices() async {
+    setState(() => _iotScanning = true);
     try {
       await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return;
 
-      final alreadyAdded = _devices.any((d) => d.deviceId == 'smart-chair-01');
+      final available = <DiscoveredDevice>[];
+      if (available.isEmpty) {
+        _showSnack('검색된 IoT 기기가 없습니다.');
+        return;
+      }
+
+      final selected = await _showDiscoveryDialog(
+        available,
+        title: 'Wi-Fi 디바이스 연결',
+      );
+      if (selected == null) {
+        _showSnack('IoT 디바이스 연결을 취소했어요.');
+        return;
+      }
+      await _pairDemoIotDevice(selected);
+    } finally {
+      if (mounted) setState(() => _iotScanning = false);
+    }
+  }
+
+  Future<void> _scanSmartChairs() async {
+    setState(() => _smartChairScanning = true);
+    try {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+
+      final alreadyAdded = _smartChairs.any(
+        (d) => d.deviceId == 'smart-chair-01',
+      );
       if (alreadyAdded) {
         _showSnack('스마트 의자가 이미 연결되어 있습니다.');
         return;
@@ -168,19 +318,22 @@ class _DeviceManagerPageState extends State<DeviceManager> {
         ),
       ];
 
-      final selected = await _showDiscoveryDialog(available);
+      final selected = await _showDiscoveryDialog(
+        available,
+        title: '스마트 의자 연결',
+      );
       if (selected == null) {
         _showSnack('스마트 의자 연결을 취소했어요.');
         return;
       }
 
-      await _pairDevice(selected);
+      await _pairSmartChair(selected);
     } finally {
-      if (mounted) setState(() => scanning = false);
+      if (mounted) setState(() => _smartChairScanning = false);
     }
   }
 
-  Future<void> _pairDevice(DiscoveredDevice device) async {
+  Future<void> _pairDemoIotDevice(DiscoveredDevice device) async {
     final navigator = Navigator.of(context, rootNavigator: true);
     final progress = _buildProgressDialog('Wi-Fi 디바이스와 연결 중입니다...');
     showDialog<void>(
@@ -192,7 +345,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
     await Future.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
     setState(() {
-      final nextId = _nextDeviceId();
+      final nextId = _nextIotDeviceId();
       final paired = DeviceDto(
         id: nextId,
         userId: 1,
@@ -203,13 +356,42 @@ class _DeviceManagerPageState extends State<DeviceManager> {
         connectionType: device.connectionType,
         isCalibrated: true,
       );
-      _devices = [..._devices, paired];
+      _iotDevices = [..._iotDevices, paired];
     });
     _showSnack('"${device.deviceName}"이(가) 연결되었습니다.');
     if (navigator.canPop()) navigator.pop();
   }
 
-  Future<void> _handleDeviceTap(DeviceDto device) async {
+  Future<void> _pairSmartChair(DiscoveredDevice device) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final progress = _buildProgressDialog('스마트 의자와 연결 중입니다...');
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => progress,
+    );
+
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+    setState(() {
+      final nextId = _nextSmartChairId();
+      final paired = DeviceDto(
+        id: nextId,
+        userId: 1,
+        deviceId: device.deviceId,
+        deviceName: device.deviceName,
+        deviceType: device.deviceType,
+        isConnected: true,
+        connectionType: device.connectionType,
+        isCalibrated: true,
+      );
+      _smartChairs = [..._smartChairs, paired];
+    });
+    _showSnack('"${device.deviceName}"이(가) 연결되었습니다.');
+    if (navigator.canPop()) navigator.pop();
+  }
+
+  Future<void> _handleIotDeviceTap(DeviceDto device) async {
     final wantConnect = !device.isConnected;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -236,11 +418,52 @@ class _DeviceManagerPageState extends State<DeviceManager> {
     if (confirmed != true) return;
 
     setState(() {
-      final idx = _devices.indexWhere((d) => d.id == device.id);
+      final idx = _iotDevices.indexWhere((d) => d.id == device.id);
       if (idx != -1) {
-        final updatedList = List<DeviceDto>.from(_devices);
+        final updatedList = List<DeviceDto>.from(_iotDevices);
         updatedList[idx] = device.copyWith(isConnected: wantConnect);
-        _devices = updatedList;
+        _iotDevices = updatedList;
+      }
+    });
+    _showSnack(
+      wantConnect
+          ? '"${device.deviceName}"이(가) 연결되었습니다.'
+          : '"${device.deviceName}" 연결을 해제했습니다.',
+    );
+  }
+
+  Future<void> _handleSmartChairTap(DeviceDto device) async {
+    final wantConnect = !device.isConnected;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(wantConnect ? '디바이스 연결' : '디바이스 연결 해제'),
+        content: Text(
+          wantConnect
+              ? 'Wi-Fi로 "${device.deviceName}" 기기를 연결할까요?'
+              : '"${device.deviceName}" 기기의 연결을 해제할까요?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(wantConnect ? '연결' : '해제'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      final idx = _smartChairs.indexWhere((d) => d.id == device.id);
+      if (idx != -1) {
+        final updatedList = List<DeviceDto>.from(_smartChairs);
+        updatedList[idx] = device.copyWith(isConnected: wantConnect);
+        _smartChairs = updatedList;
       }
     });
     _showSnack(
@@ -251,8 +474,9 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   }
 
   Future<DiscoveredDevice?> _showDiscoveryDialog(
-    List<DiscoveredDevice> found,
-  ) async {
+    List<DiscoveredDevice> found, {
+    String title = '디바이스 연결',
+  }) async {
     String? selectedId = found.first.deviceId;
     return showDialog<DiscoveredDevice>(
       context: context,
@@ -260,7 +484,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Wi-Fi 디바이스 연결'),
+              title: Text(title),
               content: SizedBox(
                 width: 360,
                 child: SingleChildScrollView(
@@ -321,10 +545,19 @@ class _DeviceManagerPageState extends State<DeviceManager> {
     return parts.join(' • ');
   }
 
-  int _nextDeviceId() {
-    if (_devices.isEmpty) return 1;
-    int maxId = _devices.first.id;
-    for (final d in _devices.skip(1)) {
+  int _nextIotDeviceId() {
+    if (_iotDevices.isEmpty) return 1;
+    int maxId = _iotDevices.first.id;
+    for (final d in _iotDevices.skip(1)) {
+      if (d.id > maxId) maxId = d.id;
+    }
+    return maxId + 1;
+  }
+
+  int _nextSmartChairId() {
+    if (_smartChairs.isEmpty) return 1;
+    int maxId = _smartChairs.first.id;
+    for (final d in _smartChairs.skip(1)) {
       if (d.id > maxId) maxId = d.id;
     }
     return maxId + 1;

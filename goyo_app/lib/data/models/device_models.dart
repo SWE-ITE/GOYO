@@ -103,3 +103,33 @@ class PairDeviceRequest {
     'connection_type': connectionType,
   };
 }
+
+class DeviceStatus {
+  final String deviceId;
+  final String deviceName;
+  final String deviceType;
+  final bool isConnected;
+  final bool isCalibrated;
+  final Map<String, dynamic>? redisStatus;
+
+  const DeviceStatus({
+    required this.deviceId,
+    required this.deviceName,
+    required this.deviceType,
+    required this.isConnected,
+    required this.isCalibrated,
+    this.redisStatus,
+  });
+
+  factory DeviceStatus.fromJson(Map<String, dynamic> json) {
+    final redis = json['redis_status'];
+    return DeviceStatus(
+      deviceId: json['device_id'] as String? ?? '',
+      deviceName: json['device_name'] as String? ?? '',
+      deviceType: json['device_type'] as String? ?? 'unknown',
+      isConnected: json['is_connected'] as bool? ?? false,
+      isCalibrated: json['is_calibrated'] as bool? ?? false,
+      redisStatus: redis is Map<String, dynamic> ? redis : null,
+    );
+  }
+}

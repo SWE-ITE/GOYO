@@ -220,4 +220,14 @@ extension DeviceManagementApi on ApiService {
       throw Exception('Failed to delete device: $msg');
     }
   }
+
+  Future<DeviceStatus> getDeviceStatus(String deviceId) async {
+    try {
+      final res = await _dio.get('/api/devices/status/$deviceId');
+      return DeviceStatus.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final msg = e.response?.data ?? e.message;
+      throw Exception('디바이스 상태를 가져오지 못했습니다: $msg');
+    }
+  }
 }
