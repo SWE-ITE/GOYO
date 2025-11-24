@@ -212,6 +212,18 @@ extension DeviceManagementApi on ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getDeviceSetup() async {
+    try {
+      final res = await _dio.get('/api/devices/setup');
+      final data = res.data;
+      if (data is Map<String, dynamic>) return data;
+      throw const FormatException('Invalid device setup payload');
+    } on DioException catch (e) {
+      final msg = e.response?.data ?? e.message;
+      throw Exception('Device setup fetch failed: $msg');
+    }
+  }
+
   Future<void> deleteDevice(String deviceId) async {
     try {
       await _dio.delete('/api/devices/$deviceId');
@@ -228,6 +240,18 @@ extension DeviceManagementApi on ApiService {
     } on DioException catch (e) {
       final msg = e.response?.data ?? e.message;
       throw Exception('디바이스 상태를 가져오지 못했습니다: $msg');
+    }
+  }
+
+  Future<Map<String, dynamic>> calibrateDevice(String deviceId) async {
+    try {
+      final res = await _dio.post('/api/devices/calibrate/$deviceId');
+      final data = res.data;
+      if (data is Map<String, dynamic>) return data;
+      throw const FormatException('Invalid calibration payload');
+    } on DioException catch (e) {
+      final msg = e.response?.data ?? e.message;
+      throw Exception('캘리브레이션을 실패했습니다: $msg');
     }
   }
 }

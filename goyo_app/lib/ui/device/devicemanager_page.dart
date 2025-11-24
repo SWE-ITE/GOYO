@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:goyo_app/data/models/device_models.dart';
+import 'package:goyo_app/data/services/api_service.dart';
 import 'package:goyo_app/ui/device/widget/deviceinfo.dart';
+import 'package:provider/provider.dart';
 
 class DeviceManager extends StatefulWidget {
   const DeviceManager({super.key});
@@ -46,12 +48,105 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   bool _iotScanning = false;
   List<DeviceDto> _iotDevices = const [];
   bool _smartChairScanning = false;
+  bool _loadingSmartChairs = false;
+  bool _loadingSetup = false;
+  bool _smartChairReady = false;
+  Map<String, dynamic>? _smartChairSetup;
   List<DeviceDto> _smartChairs = const [];
 
   @override
   void initState() {
     super.initState();
     _iotDevices = List<DeviceDto>.from(_demoDevices);
+    _loadSmartChairs();
+  }
+
+  Widget _buildSmartChairSetupInfo(ColorScheme cs) {
+    final setup = _smartChairSetup;
+    final goyo = setup != null && setup['goyo_device'] is Map<String, dynamic>
+        ? setup['goyo_device'] as Map<String, dynamic>
+        : null;
+    final statusText = _smartChairReady ? '준비 완료' : '설정 필요';
+    final ip = goyo?['ip_address'] as String?;
+
+    return Row(
+      children: [
+        Chip(
+          backgroundColor:
+              _smartChairReady ? cs.primaryContainer : cs.surfaceVariant,
+          label: Text(
+            statusText,
+            style: TextStyle(
+              color: _smartChairReady ? cs.onPrimaryContainer : cs.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        if (ip != null && ip.isNotEmpty)
+          Text(
+            'IP: $ip',
+            style: TextStyle(color: cs.onSurfaceVariant),
+          )
+        else if (setup != null)
+          Text(
+            '네트워크 정보 없음',
+            style: TextStyle(color: cs.onSurfaceVariant),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _loadSmartChairs() async {
+    await Future.wait([
+      _fetchSmartChairs(),
+      _refreshSmartChairSetup(),
+    ]);
+  }
+
+  Future<void> _fetchSmartChairs() async {
+    setState(() => _loadingSmartChairs = true);
+    try {
+      final api = context.read<ApiService>();
+      final devices = await api.getDevices();
+      final chairs = devices
+          .where((d) => _isSmartChairType(d.deviceType))
+          .map(_normalizeSmartChair)
+          .toList();
+      if (!mounted) return;
+      setState(() => _smartChairs = chairs);
+    } catch (e) {
+      _showSnack('스마트 의자 목록을 불러오지 못했어요: $e', isError: true);
+    } finally {
+      if (mounted) setState(() => _loadingSmartChairs = false);
+    }
+  }
+
+  Future<void> _refreshSmartChairSetup() async {
+    setState(() => _loadingSetup = true);
+    try {
+      final api = context.read<ApiService>();
+      final setup = await api.getDeviceSetup();
+      if (!mounted) return;
+      setState(() {
+        _smartChairSetup = setup;
+        _smartChairReady = setup['is_ready'] == true;
+      });
+    } catch (e) {
+      _showSnack('의자 구성 정보를 가져오지 못했어요: $e', isError: true);
+    } finally {
+      if (mounted) setState(() => _loadingSetup = false);
+    }
+  }
+
+  DeviceDto _normalizeSmartChair(DeviceDto device) {
+    final normalizedType =
+        _isSmartChairType(device.deviceType) ? 'smart_chair' : device.deviceType;
+    return device.copyWith(deviceType: normalizedType);
+  }
+
+  bool _isSmartChairType(String type) {
+    return type == 'smart_chair' || type == 'goyo_device';
   }
 
   @override
@@ -191,7 +286,9 @@ class _DeviceManagerPageState extends State<DeviceManager> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   TextButton.icon(
-                    onPressed: _smartChairScanning ? null : _scanSmartChairs,
+                    onPressed: (_smartChairScanning || _loadingSmartChairs)
+                        ? null
+                        : _scanSmartChairs,
                     icon: _smartChairScanning
                         ? const SizedBox(
                             width: 16,
@@ -205,8 +302,18 @@ class _DeviceManagerPageState extends State<DeviceManager> {
                   ),
                 ],
               ),
+              const SizedBox(height: 4),
+              if (_loadingSetup)
+                const LinearProgressIndicator(minHeight: 2)
+              else
+                _buildSmartChairSetupInfo(cs),
               const SizedBox(height: 12),
-              if (_smartChairs.isEmpty)
+              if (_loadingSmartChairs)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_smartChairs.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
                   child: Text('등록된 스마트 의자가 없습니다.'),
@@ -221,39 +328,28 @@ class _DeviceManagerPageState extends State<DeviceManager> {
                           color: cs.primary,
                         ),
                         title: Text(_smartChairs[i].deviceName),
-                        subtitle: Text(
-                          _smartChairs[i].isConnected
-                              ? 'Connected'
-                              : 'Not Connected',
-                          style: TextStyle(
-                            color: _smartChairs[i].isConnected
-                                ? cs.primary
-                                : cs.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.info_outline),
-                          onPressed: () async {
-                            final res = await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    DeviceInfo(device: _smartChairs[i]),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _smartChairs[i].isConnected
+                                  ? 'Connected'
+                                  : 'Not Connected',
+                              style: TextStyle(
+                                color: _smartChairs[i].isConnected
+                                    ? cs.primary
+                                    : cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
                               ),
-                            );
-                            if (res is Map &&
-                                res['deletedId'] == _smartChairs[i].deviceId) {
-                              setState(
-                                () => _smartChairs.removeWhere(
-                                  (x) => x.deviceId == _smartChairs[i].deviceId,
-                                ),
-                              );
-                              _showSnack(
-                                'Deleted "${_smartChairs[i].deviceName}"',
-                              );
-                            }
-                          },
+                            ),
+                            if (_smartChairs[i].ipAddress?.isNotEmpty == true)
+                              Text(
+                                'IP: ${_smartChairs[i].ipAddress}',
+                                style: TextStyle(color: cs.onSurfaceVariant),
+                              ),
+                          ],
                         ),
+                        trailing: const Icon(Icons.chevron_right),
                         onTap: () => _handleSmartChairTap(_smartChairs[i]),
                       ),
                       if (i != _smartChairs.length - 1)
@@ -297,29 +393,17 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   Future<void> _scanSmartChairs() async {
     setState(() => _smartChairScanning = true);
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return;
-
-      final alreadyAdded = _smartChairs.any(
-        (d) => d.deviceId == 'smart-chair-01',
-      );
-      if (alreadyAdded) {
-        _showSnack('스마트 의자가 이미 연결되어 있습니다.');
+      final api = context.read<ApiService>();
+      final available = await api.discoverWifiDevices();
+      final chairs =
+          available.where((d) => _isSmartChairType(d.deviceType)).toList();
+      if (chairs.isEmpty) {
+        _showSnack('검색된 스마트 의자가 없습니다.');
         return;
       }
 
-      final available = [
-        const DiscoveredDevice(
-          deviceId: 'smart-chair-01',
-          deviceName: 'Smart Chair',
-          deviceType: 'smart_chair',
-          connectionType: 'wifi',
-          ipAddress: '192.168.0.120',
-        ),
-      ];
-
       final selected = await _showDiscoveryDialog(
-        available,
+        chairs,
         title: '스마트 의자 연결',
       );
       if (selected == null) {
@@ -328,6 +412,8 @@ class _DeviceManagerPageState extends State<DeviceManager> {
       }
 
       await _pairSmartChair(selected);
+    } catch (e) {
+      _showSnack('스마트 의자 검색에 실패했어요: $e', isError: true);
     } finally {
       if (mounted) setState(() => _smartChairScanning = false);
     }
@@ -371,24 +457,33 @@ class _DeviceManagerPageState extends State<DeviceManager> {
       builder: (_) => progress,
     );
 
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (!mounted) return;
-    setState(() {
-      final nextId = _nextSmartChairId();
-      final paired = DeviceDto(
-        id: nextId,
-        userId: 1,
-        deviceId: device.deviceId,
-        deviceName: device.deviceName,
-        deviceType: device.deviceType,
-        isConnected: true,
-        connectionType: device.connectionType,
-        isCalibrated: true,
+    try {
+      final api = context.read<ApiService>();
+      final paired = await api.pairDevice(
+        PairDeviceRequest(
+          deviceId: device.deviceId,
+          deviceName: device.deviceName,
+          deviceType:
+              _isSmartChairType(device.deviceType) ? 'goyo_device' : device.deviceType,
+          connectionType: device.connectionType,
+          ipAddress: device.ipAddress ?? '',
+        ),
       );
-      _smartChairs = [..._smartChairs, paired];
-    });
-    _showSnack('"${device.deviceName}"이(가) 연결되었습니다.');
-    if (navigator.canPop()) navigator.pop();
+      if (!mounted) return;
+      setState(() {
+        final normalized = _normalizeSmartChair(paired);
+        _smartChairs = [
+          ..._smartChairs.where((d) => d.deviceId != normalized.deviceId),
+          normalized,
+        ];
+      });
+      await _refreshSmartChairSetup();
+      _showSnack('"${device.deviceName}"이(가) 연결되었습니다.');
+    } catch (e) {
+      _showSnack('스마트 의자 페어링 실패: $e', isError: true);
+    } finally {
+      if (navigator.canPop()) navigator.pop();
+    }
   }
 
   Future<void> _handleIotDeviceTap(DeviceDto device) async {
@@ -433,44 +528,23 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   }
 
   Future<void> _handleSmartChairTap(DeviceDto device) async {
-    final wantConnect = !device.isConnected;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(wantConnect ? '디바이스 연결' : '디바이스 연결 해제'),
-        content: Text(
-          wantConnect
-              ? 'Wi-Fi로 "${device.deviceName}" 기기를 연결할까요?'
-              : '"${device.deviceName}" 기기의 연결을 해제할까요?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(wantConnect ? '연결' : '해제'),
-          ),
-        ],
+    final res = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DeviceInfo(device: device),
       ),
     );
 
-    if (confirmed != true) return;
+    if (res is Map && res['deletedId'] == device.deviceId) {
+      setState(() {
+        _smartChairs =
+            _smartChairs.where((d) => d.deviceId != device.deviceId).toList();
+      });
+      await _refreshSmartChairSetup();
+      return;
+    }
 
-    setState(() {
-      final idx = _smartChairs.indexWhere((d) => d.id == device.id);
-      if (idx != -1) {
-        final updatedList = List<DeviceDto>.from(_smartChairs);
-        updatedList[idx] = device.copyWith(isConnected: wantConnect);
-        _smartChairs = updatedList;
-      }
-    });
-    _showSnack(
-      wantConnect
-          ? '"${device.deviceName}"이(가) 연결되었습니다.'
-          : '"${device.deviceName}" 연결을 해제했습니다.',
-    );
+    await _fetchSmartChairs();
+    await _refreshSmartChairSetup();
   }
 
   Future<DiscoveredDevice?> _showDiscoveryDialog(
@@ -554,15 +628,6 @@ class _DeviceManagerPageState extends State<DeviceManager> {
     return maxId + 1;
   }
 
-  int _nextSmartChairId() {
-    if (_smartChairs.isEmpty) return 1;
-    int maxId = _smartChairs.first.id;
-    for (final d in _smartChairs.skip(1)) {
-      if (d.id > maxId) maxId = d.id;
-    }
-    return maxId + 1;
-  }
-
   IconData _iconForType(String type) {
     switch (type) {
       case 'refrigerator':
@@ -571,6 +636,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
         return Icons.tv;
       case 'robot_cleaner':
         return Icons.cleaning_services;
+      case 'goyo_device':
       case 'smart_chair':
         return Icons.event_seat;
       default:
@@ -586,6 +652,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
         return 'TV';
       case 'robot_cleaner':
         return '로봇 청소기';
+      case 'goyo_device':
       case 'smart_chair':
         return '스마트 의자';
       default:
