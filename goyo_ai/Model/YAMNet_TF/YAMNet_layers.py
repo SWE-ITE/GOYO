@@ -9,10 +9,9 @@ class YAMNetLayer(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
         super(YAMNetLayer, self).__init__(**kwargs)
         self.yamnet_tf_function = hub.load('https://tfhub.dev/google/yamnet/1') # 모델로드
-        self.trainable = False # 학습되지 않도록
+        # self.trainable = False # 학습되지 않도록
 
     def call(self, inputs):
-        # 배치 내의 각 샘플(15600,)에 대해 실행할 함수를 정의합니다.
         def run_yamnet_on_sample(waveform_1d):
             outputs_tuple = self.yamnet_tf_function(waveform_1d)
             return outputs_tuple[1] #YAMNet의 출력값에서 1024의 embedding값만 가져옴.
@@ -23,7 +22,7 @@ class YAMNetLayer(tf.keras.layers.Layer):
             elems=inputs,
             fn_output_signature=tf.TensorSpec(shape=(1, 1024), dtype=tf.float32)
         )
-        return batch_embeddings #최종 결과 (batch_size, 1, 1024) 모양의 텐서를 반환.
+        return batch_embeddings #최종 결과   (batch_size, 1, 1024) 모양의 텐서를 반환.
 
     def compute_output_shape(self, input_shape):
         return (input_shape[0], 1, 1024)
