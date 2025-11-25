@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import math
 import os
 import sys
 import time
@@ -82,6 +83,7 @@ class FxLMSANC:
         leakage: float = 1e-4,
         manual_gain_mode: bool = False,
         manual_gain: float = 0.0,
+        reference_lowpass_hz: Optional[float] = None,
     ):
         if (
             reference_path is None
@@ -113,6 +115,11 @@ class FxLMSANC:
         self.leakage = leakage
         self.manual_gain_mode = manual_gain_mode
         self.manual_gain = manual_gain
+        self.reference_lowpass_hz = (
+            reference_lowpass_hz if reference_lowpass_hz and reference_lowpass_hz > 0.0 else None
+        )
+        self._reference_lowpass_alpha: Optional[float] = None
+        self._reference_lowpass_state = 0.0
 
         self.reference_input_device_index = reference_input_device_index
         self.reference_channel_index = reference_channel_index
@@ -137,6 +144,7 @@ class FxLMSANC:
                 )
             self.sample_rate = sample_rate
             self.reference_signal = np.zeros(self.block_size, dtype=np.float32)
+        self._configure_reference_lowpass()
 
         if secondary_path is None:
             # Use a single-sample delta if no model is provided.
@@ -187,6 +195,34 @@ class FxLMSANC:
         self.fx_history = np.zeros(self.filter_length, dtype=np.float32)
         self.reference_index = 0
         self.frame_index = 0
+        self._reference_lowpass_state = 0.0
+
+    def _configure_reference_lowpass(self) -> None:
+        """Initialise low-pass filter coefficient/state if requested."""
+        self._reference_lowpass_state = 0.0
+        if self.reference_lowpass_hz is None:
+            self._reference_lowpass_alpha = None
+            return
+        cutoff = min(self.reference_lowpass_hz, self.sample_rate / 2)
+        if cutoff <= 0:
+            self._reference_lowpass_alpha = None
+            return
+        self._reference_lowpass_alpha = 1.0 - math.exp(
+            -2.0 * math.pi * cutoff / float(self.sample_rate)
+        )
+
+    def _apply_reference_lowpass(self, block: np.ndarray) -> np.ndarray:
+        """Run the optional one-pole low-pass on the reference block."""
+        if self._reference_lowpass_alpha is None:
+            return block
+        filtered = np.empty_like(block)
+        state = self._reference_lowpass_state
+        alpha = self._reference_lowpass_alpha
+        for idx, sample in enumerate(block):
+            state += alpha * (sample - state)
+            filtered[idx] = state
+        self._reference_lowpass_state = state
+        return filtered
 
     def stop(self) -> None:
         """Request the processing loop to halt after the current block."""
@@ -364,6 +400,7 @@ class FxLMSANC:
                     break
 
                 ref_block = self._next_reference_block(loop_reference)
+                adapt_block = self._apply_reference_lowpass(ref_block)
                 if (
                     not self._live_reference
                     and not loop_reference
@@ -373,10 +410,10 @@ class FxLMSANC:
                     self._stop_requested = True
 
                 if self.manual_gain_mode:
-                    anti_noise_block = self.manual_gain * ref_block
+                    anti_noise_block = self.manual_gain * adapt_block
                     fx_vectors = None
                 else:
-                    anti_noise_block, fx_vectors = self._synthesize_block(ref_block)
+                    anti_noise_block, fx_vectors = self._synthesize_block(adapt_block)
                 scaled_anti_noise = anti_noise_block * self.control_output_gain
 
                 if self.split_reference_channels:
