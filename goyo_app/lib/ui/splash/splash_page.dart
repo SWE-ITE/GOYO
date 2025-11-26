@@ -83,7 +83,7 @@ class _SplashPageState extends State<SplashPage> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Adaptive Noise Control',
+                'Connecting you to better focus',
                 style: TextStyle(
                   fontSize: 14,
                   letterSpacing: 0.5,

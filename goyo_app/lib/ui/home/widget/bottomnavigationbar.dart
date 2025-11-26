@@ -16,9 +16,9 @@ class AppNavigationBar extends StatelessWidget {
       selectedIndex: currentIndex,
       onDestinationSelected: onSelected,
       destinations: const [
-        NavigationDestination(icon: Icon(Icons.speaker), label: 'Device Manager'),
-        NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
+        NavigationDestination(icon: Icon(Icons.speaker), label: '기기 관리'),
+        NavigationDestination(icon: Icon(Icons.home_outlined), label: '홈'),
+        NavigationDestination(icon: Icon(Icons.person_outline), label: '프로필'),
       ],
     );
   }

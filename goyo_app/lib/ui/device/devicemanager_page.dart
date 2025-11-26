@@ -76,8 +76,9 @@ class _DeviceManagerPageState extends State<DeviceManager> {
     return Row(
       children: [
         Chip(
-          backgroundColor:
-              _smartChairReady ? cs.primaryContainer : cs.surfaceVariant,
+          backgroundColor: _smartChairReady
+              ? cs.primaryContainer
+              : cs.surfaceVariant,
           label: Text(
             statusText,
             style: TextStyle(
@@ -88,24 +89,15 @@ class _DeviceManagerPageState extends State<DeviceManager> {
         ),
         const SizedBox(width: 8),
         if (ip != null && ip.isNotEmpty)
-          Text(
-            'IP: $ip',
-            style: TextStyle(color: cs.onSurfaceVariant),
-          )
+          Text('IP: $ip', style: TextStyle(color: cs.onSurfaceVariant))
         else if (setup != null)
-          Text(
-            '네트워크 정보 없음',
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
+          Text('네트워크 정보 없음', style: TextStyle(color: cs.onSurfaceVariant)),
       ],
     );
   }
 
   Future<void> _loadSmartChairs() async {
-    await Future.wait([
-      _fetchSmartChairs(),
-      _refreshSmartChairSetup(),
-    ]);
+    await Future.wait([_fetchSmartChairs(), _refreshSmartChairSetup()]);
   }
 
   Future<void> _fetchSmartChairs() async {
@@ -144,8 +136,9 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   }
 
   DeviceDto _normalizeSmartChair(DeviceDto device) {
-    final normalizedType =
-        _isSmartChairType(device.deviceType) ? 'smart_chair' : device.deviceType;
+    final normalizedType = _isSmartChairType(device.deviceType)
+        ? 'smart_chair'
+        : device.deviceType;
     return device.copyWith(deviceType: normalizedType);
   }
 
@@ -338,7 +331,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
                             Text(
                               _smartChairs[i].isConnected
                                   ? 'Connected'
-                                  : 'Not Connected',
+                                  : 'Connected',
                               style: TextStyle(
                                 color: _smartChairs[i].isConnected
                                     ? cs.primary
@@ -487,8 +480,9 @@ class _DeviceManagerPageState extends State<DeviceManager> {
         PairDeviceRequest(
           deviceId: device.deviceId,
           deviceName: device.deviceName,
-          deviceType:
-              _isSmartChairType(device.deviceType) ? 'goyo_device' : device.deviceType,
+          deviceType: _isSmartChairType(device.deviceType)
+              ? 'goyo_device'
+              : device.deviceType,
           connectionType: device.connectionType,
           ipAddress: ipAddress,
         ),
@@ -552,16 +546,15 @@ class _DeviceManagerPageState extends State<DeviceManager> {
   }
 
   Future<void> _handleSmartChairTap(DeviceDto device) async {
-    final res = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => DeviceInfo(device: device),
-      ),
-    );
+    final res = await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => DeviceInfo(device: device)));
 
     if (res is Map && res['deletedId'] == device.deviceId) {
       setState(() {
-        _smartChairs =
-            _smartChairs.where((d) => d.deviceId != device.deviceId).toList();
+        _smartChairs = _smartChairs
+            .where((d) => d.deviceId != device.deviceId)
+            .toList();
       });
       await _refreshSmartChairSetup();
       return;
