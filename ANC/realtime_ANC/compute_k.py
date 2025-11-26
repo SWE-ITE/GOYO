@@ -42,7 +42,7 @@ SECONDARY_PATH = ANC_ROOT / "enhanced_ANC" / "secondary_path.npy"
 # Experiment parameters (fixed here)
 TRIAL_DURATION = 8.0  # seconds per trial
 SKIP_INITIAL_FRAMES = 50  # ignore first N frames in averaging (settling)
-SWEEP_KS = np.linspace(-1.0, 1.0, num=21, endpoint=True)  # inclusive sweep
+SWEEP_KS = np.linspace(-1.0, 1.0, num=11, endpoint=True)  # inclusive sweep
 
 
 @dataclass

@@ -4,7 +4,7 @@ import soundfile as sf
 # ---------------------------------------
 # Configuration
 # ---------------------------------------
-fs = 16000          # Sample rate in Hz
+fs = 48000          # Sample rate in Hz
 duration = 200.0     # Duration in seconds
 freq = 200.0        # Frequency of the sine wave in Hz
 amplitude = 0.3     # Amplitude (0–1 range)
