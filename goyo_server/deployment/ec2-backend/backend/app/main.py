@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, devices, profile, home
+from app.api import auth, devices, profile, home, appliances
 from app.database import engine, Base
 from app.services.mqtt_service import mqtt_service
 import logging
@@ -33,6 +33,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router)
 app.include_router(devices.router)
+app.include_router(appliances.router)
 app.include_router(profile.router)
 app.include_router(home.router)
 

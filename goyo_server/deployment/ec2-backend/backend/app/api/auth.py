@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
+from app.models.appliance import Appliance
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
 from app.utils.security import (
-    get_password_hash, 
-    verify_password, 
+    get_password_hash,
+    verify_password,
     create_access_token,
     create_refresh_token,
     generate_verification_token
@@ -43,6 +44,18 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    # Create default appliances for the new user
+    default_appliances = ["선풍기", "청소기", "냉장고", "공기청정기"]
+    for appliance_name in default_appliances:
+        appliance = Appliance(
+            user_id=new_user.id,
+            appliance_name=appliance_name,
+            is_noise_active=False
+        )
+        db.add(appliance)
+
+    db.commit()
 
     return new_user
 
