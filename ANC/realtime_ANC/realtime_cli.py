@@ -30,9 +30,9 @@ ANC_ROOT = Path(__file__).resolve().parent.parent
 REFERENCE_PATH = ANC_ROOT / "src" / "sine_200Hz.wav"
 SECONDARY_PATH = ANC_ROOT / "realtime_ANC" / "secondary_path.npy"
 
-CONTROL_DEVICE: Optional[int] = 10  # Anti-noise playback device
-RECORD_DEVICE: Optional[int] = 10  # Aggregate device containing microphones
-REFERENCE_DEVICE: Optional[int] = 10  # Dedicated reference playback device (for disturbance speaker)
+CONTROL_DEVICE: Optional[int] = 9  # Anti-noise playback device
+RECORD_DEVICE: Optional[int] = 9  # Aggregate device containing microphones
+REFERENCE_DEVICE: Optional[int] = 9  # Dedicated reference playback device (for disturbance speaker)
 REFERENCE_INPUT_DEVICE: Optional[int] = None  # Standalone reference microphone device index
 
 ERROR_INPUT_CHANNEL: int = 0  # Channel on RECORD_DEVICE for the error mic
@@ -41,12 +41,12 @@ REFERENCE_INPUT_CHANNEL: Optional[int] = 1  # Channel on RECORD_DEVICE for the r
 CONTROL_OUTPUT_CHANNEL: int = 0  # Channel on CONTROL_DEVICE for anti-noise
 REFERENCE_OUTPUT_CHANNEL: int = 2  # Channel on REFERENCE_DEVICE for reference playback
 
-CONTROL_OUTPUT_GAIN: float = 1.0 # Scale factor for anti-noise playback amplitude
-STEP_SIZE = 5e-6
+CONTROL_OUTPUT_GAIN: float = 0.5 # Scale factor for anti-noise playback amplitude
+STEP_SIZE = 1e-5
 BLOCK_SIZE: Optional[int] = 64
 
 MANUAL_GAIN_MODE = False  # When True, bypass adaptation and output MANUAL_K * reference
-MANUAL_K = -0.07 # Manual gain applied when MANUAL_GAIN_MODE is True
+MANUAL_K = -0.4 # Manual gain applied when MANUAL_GAIN_MODE is True
 LEAKAGE = 0.0            # Weight leakage for NLMS (0 disables)
 
 FILTER_LENGTH: Optional[int] = 256

@@ -11,10 +11,10 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Type
 
 import numpy as np
-import pyaudio  # type: ignore
+import sounddevice as sd  # type: ignore
 
 from .fxlms_controller import DEFAULT_BLOCK_SIZE, FxLMSANC, read_mono_wav
 
@@ -53,6 +53,7 @@ def create_controller(
     manual_gain: float = 0.0,
     leakage: float = 1e-4,
     reference_lowpass_hz: Optional[float] = None,
+    controller_cls: Type[FxLMSANC] = FxLMSANC,
 ) -> FxLMSANC:
     """
     Construct an ``FxLMSANC`` instance with shared configuration defaults.
@@ -90,7 +91,7 @@ def create_controller(
     if reference_lowpass_hz is not None:
         init_kwargs["reference_lowpass_hz"] = reference_lowpass_hz
 
-    return FxLMSANC(**init_kwargs)
+    return controller_cls(**init_kwargs)
 
 
 def play_reference(
@@ -110,28 +111,27 @@ def play_reference(
     signal, sample_rate = read_mono_wav(str(reference_path))
     block_len = block_size if block_size is not None else DEFAULT_BLOCK_SIZE
 
-    pa = pyaudio.PyAudio()
     ctrl_channels = 2 if split_reference_channels else max(1, output_channel + 1)
-    control_stream = pa.open(
-        format=pyaudio.paFloat32,
+    control_stream = sd.OutputStream(
+        samplerate=sample_rate,
+        blocksize=block_len,
+        dtype="float32",
+        device=control_device,
         channels=ctrl_channels,
-        rate=sample_rate,
-        output=True,
-        frames_per_buffer=block_len,
-        output_device_index=control_device,
     )
+    control_stream.start()
     reference_stream = None
     ref_channels = None
     if reference_device is not None:
         ref_channels = max(1, output_channel + 1)
-        reference_stream = pa.open(
-            format=pyaudio.paFloat32,
+        reference_stream = sd.OutputStream(
+            samplerate=sample_rate,
+            blocksize=block_len,
+            dtype="float32",
+            device=reference_device,
             channels=ref_channels,
-            rate=sample_rate,
-            output=True,
-            frames_per_buffer=block_len,
-            output_device_index=reference_device,
         )
+        reference_stream.start()
 
     index = 0
     start_time = time.time()
@@ -153,18 +153,18 @@ def play_reference(
                 block = np.array(block, dtype=np.float32, copy=False)
 
             if split_reference_channels:
-                stereo = np.zeros(block_len * 2, dtype=np.float32)
-                stereo[0::2] = block
-                control_stream.write(stereo.tobytes())
+                stereo = np.zeros((block_len, 2), dtype=np.float32)
+                stereo[:, 0] = block
+                control_stream.write(stereo)
             else:
                 ctrl_buf = np.zeros((block_len, ctrl_channels), dtype=np.float32)
                 ctrl_buf[:, output_channel] = block
-                control_stream.write(ctrl_buf.astype(np.float32).tobytes())
+                control_stream.write(ctrl_buf)
 
             if reference_stream is not None:
                 ref_buf = np.zeros((block_len, ref_channels), dtype=np.float32)
                 ref_buf[:, output_channel] = block
-                reference_stream.write(ref_buf.astype(np.float32).tobytes())
+                reference_stream.write(ref_buf)
 
             index += block_len
             if index >= len(signal):
@@ -173,9 +173,8 @@ def play_reference(
                 else:
                     break
     finally:
-        control_stream.stop_stream()
+        control_stream.stop()
         control_stream.close()
         if reference_stream:
-            reference_stream.stop_stream()
+            reference_stream.stop()
             reference_stream.close()
-        pa.terminate()
