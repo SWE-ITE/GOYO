@@ -6,8 +6,8 @@ from sklearn.utils import class_weight
 from tensorflow.keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from pathlib import Path
-from layers import YAMNetLayer
-from dataset_YAMNet import SoundDataGenerator
+from YAMNet_layers import YAMNetLayer
+from YAMNet_dataloader import SoundDataGenerator
 
 def scan_dataset(dataset_path, class_names):
     file_paths = []
@@ -17,16 +17,18 @@ def scan_dataset(dataset_path, class_names):
     for class_index, class_name in enumerate(class_names):
         class_folder = os.path.join(dataset_path, class_name)
         if not os.path.exists(class_folder):
-            print(f"경고: {class_folder} 폴더를 찾을 수 없습니다. 건너뜁니다.")
+            print(f"error: {class_folder} 폴더를 찾을 수 없습니다. 건너뜁니다.")
             continue
+
         paths = glob.glob(os.path.join(class_folder, '*.wav')) + \
                 glob.glob(os.path.join(class_folder, '*.mp3')) + \
                 glob.glob(os.path.join(class_folder, '*.m4a')) + \
                 glob.glob(os.path.join(class_folder, '*.aac'))
+        
         file_paths.extend(paths)
         labels.extend([class_index] * len(paths))
         
-    print(f"--- 스캔 완료. 총 {len(file_paths)}개 파일 경로 확보. ---")
+    print(f"총 {len(file_paths)}개 파일 경로 확보.")
     return file_paths, labels
 
 SAMPLE_RATE = 16000
@@ -41,6 +43,7 @@ CLASS_NAMES = [
     'Vacuum',
 ]
 NOISE_CLASSES = len(CLASS_NAMES)
+BATCH_SIZE = 16
 
 def build_finetuned_model(NOISE_CLASSES):
     inputs = tf.keras.layers.Input(shape=(AUDIO_LENGTH_SAMPLES,), dtype=tf.float32, name='audio_input')
@@ -82,8 +85,6 @@ class_weights = class_weight.compute_class_weight(
 class_weight_dict = {i : class_weights[i] for i in range(len(class_weights))}
 print(f"클래스 가중치 적용: {class_weight_dict}")
 
-
-BATCH_SIZE = 32
 # 훈련용 제너레이터
 train_generator = SoundDataGenerator(
     file_paths=train_files,
@@ -104,11 +105,12 @@ val_generator = SoundDataGenerator(
     class_names=CLASS_NAMES,
     augment=False
 )
-
-os.makedirs('checkpoints', exist_ok=True) #자동저장
+CHECKPOINT_DIR = '../checkpoints'
+os.makedirs(CHECKPOINT_DIR, exist_ok=True) #자동저장
+CHECKPOINT_PATH = os.path.join(CHECKPOINT_DIR, 'best_model_yamnet.keras')
 
 checkpoint_cb = ModelCheckpoint(
-    'checkpoints/best_model.keras',
+    CHECKPOINT_PATH,
     monitor='val_accuracy', #'accuracy'가 아닌 'val_accuracy'(검증 정확도)를 모니터링해야 함.(전자는 과적합 우려)
     save_best_only=True,
     mode='max',
@@ -116,7 +118,6 @@ checkpoint_cb = ModelCheckpoint(
 )
 
 #start training
-print("\n[Phase 1]")
 # 모델 컴파일 (높은 학습률)
 model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
               loss='sparse_categorical_crossentropy', 

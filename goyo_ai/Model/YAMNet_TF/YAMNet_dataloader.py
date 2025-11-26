@@ -14,7 +14,7 @@ class SoundDataGenerator(Sequence):
         self.target_length = target_length
         self.sample_rate = sample_rate
         self.class_names = class_names
-        self.augment = augment      #True면 훈련용, False면 검증용
+        self.augment = augment
         self.n_classes = len(class_names)
         self.on_epoch_end()         #한번 섞어줌
 
@@ -48,19 +48,18 @@ class SoundDataGenerator(Sequence):
                     wav_data = wav_data[start_index : start_index + self.target_length]
                 
                     
-                #augment
+                #Augmentation
                 if self.augment:
                     # 현재 데이터의 클래스 이름 확인
                     current_class = self.class_names[label]
 
-                    # [그룹 A] 타겟 가전제품 (Microwave, Vacuum 등)
                     # 데이터가 적어서 복사본이 많음 -> 과적합 방지 위해 '강한 증강' 필수
                     if current_class != 'Others':
                         if np.random.rand() > 0.5:
-                            wav_data = add_noise(wav_data, noise_factor=np.random.uniform(0.001, 0.005))
-                        if np.random.rand() > 0.3:
+                            wav_data = add_noise(wav_data)
+                        if np.random.rand() > 0.5:
                             wav_data = pitch_shift(wav_data, self.sample_rate, n_steps=np.random.randint(-2, 3))
-                        if np.random.rand() > 0.3:
+                        if np.random.rand() > 0.7:
                             wav_data = mask_time(wav_data)
                         if np.random.rand() > 0.7:
                             wav_data = mask_freq(wav_data)
@@ -68,7 +67,7 @@ class SoundDataGenerator(Sequence):
                     else:
                         # Others는 이미 데이터셋이 다양하기 때문에 약한 증강
                         if np.random.rand() > 0.8:
-                            wav_data = add_noise(wav_data, noise_factor=np.random.uniform(0.001, 0.005))
+                            wav_data = add_noise(wav_data)
                         if np.random.rand() > 0.8:
                             wav_data = pitch_shift(wav_data, self.sample_rate, n_steps=np.random.randint(-2, 3))
                         if np.random.rand() > 0.8:
