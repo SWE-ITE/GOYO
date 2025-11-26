@@ -38,10 +38,9 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _showNoiseLogs(BuildContext context) async {
     final cs = Theme.of(context).colorScheme;
     final logs = [
-      const ('08:05', 'Kitchen fan suppressed automatically (45%)'),
-      const ('12:22', 'Living room TV limited during call mode'),
-      const ('19:40', 'Smart chair adjusted comfort ANC profile'),
-      const ('22:10', 'Quiet hours restored preferred rules'),
+      const ('08:05', '주방 환풍기가 자동으로 억제되었습니다 (45%)'),
+      const ('12:22', '통화 하는 동안 거실 TV 음량이 제한되었습니다'),
+      const ('19:40', '스마트 의자가 집중모드 ANC 프로필로 조정되었습니다'),
     ];
 
     await showModalBottomSheet<void>(
@@ -62,15 +61,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   Icon(Icons.insights_outlined, color: cs.primary),
                   const SizedBox(width: 8),
                   const Text(
-                    'Noise map logs',
+                    '노이즈 로그',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Data logs of noise patterns and device usage history',
-              ),
+              const Text('소음 패턴과 기기 사용 이력의 데이터 로그'),
               const SizedBox(height: 12),
               ...logs.map(
                 (log) => ListTile(
@@ -213,7 +210,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
             // ── Sound mode (Normal / Focus) ──────────────────────────
             Text(
-              'Preferred sound mode',
+              '노이즈 모드',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 color: cs.onSurface,
@@ -224,12 +221,12 @@ class _ProfilePageState extends State<ProfilePage> {
               segments: const [
                 ButtonSegment(
                   value: AncMode.normal,
-                  label: Text('Normal'),
+                  label: Text('일반 모드'),
                   icon: Icon(Icons.hearing_disabled),
                 ),
                 ButtonSegment(
                   value: AncMode.focus,
-                  label: Text('Focus'),
+                  label: Text('집중 모드'),
                   icon: Icon(Icons.center_focus_strong),
                 ),
               ],
@@ -277,10 +274,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       contentPadding: EdgeInsets.zero,
                       value: anc.auto,
                       onChanged: (v) => context.read<AncStore>().setAuto(v),
-                      title: const Text('Automatic mode'),
-                      subtitle: const Text(
-                        'Adjust suppression based on ambient noise',
-                      ),
+                      title: const Text('자동 모드'),
+                      subtitle: const Text('주변 소음에 맞춰 소음 억제를 자동 조정'),
                     ),
                     const SizedBox(height: 8),
                     ListTile(
@@ -290,16 +285,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         child: Icon(Icons.map_outlined, color: cs.primary),
                       ),
                       title: const Text('Noise map'),
-                      subtitle: const Text(
-                        'Data logs of noise patterns and device usage history',
-                      ),
+                      subtitle: const Text('소음 패턴 및 기기 사용 이력 데이터 로그'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _showNoiseLogs(context),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Tap to review recent noise patterns and how your devices reacted.',
-                    ),
+                    const Text('최근 소음 패턴과 기기 반응을 확인하려면 탭하세요.'),
                   ],
                 ),
               ),

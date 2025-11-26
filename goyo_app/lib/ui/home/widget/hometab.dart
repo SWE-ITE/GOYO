@@ -39,47 +39,46 @@ class _HomeTabState extends State<HomeTab> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // ANC 마스터 토글
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: cs.primary.withOpacity(.15),
-                  child: Icon(Icons.hearing, color: cs.primary),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isAncOn ? 'ANC ENABLED' : 'ANC DISABLED',
-                        style: TextStyle(
-                          color: isAncOn ? cs.primary : cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w700,
-                        ),
+        // ANC 마스터 토글 (중앙 원형 아이콘 버튼 + 텍스트)
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Material(
+                color: isAncOn
+                    ? cs.primary.withOpacity(0.25)
+                    : cs.surfaceVariant,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: (loadingAnc || togglingAnc)
+                      ? null
+                      : () => _toggleAnc(!isAncOn),
+                  child: SizedBox(
+                    width: 96,
+                    height: 96,
+                    child: Center(
+                      child: Icon(
+                        Icons.hearing,
+                        size: 56,
+                        color: isAncOn
+                            ? cs.onPrimaryContainer
+                            : cs.onSurfaceVariant,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        isAncOn
-                            ? 'Noise cancelling is active across your devices.'
-                            : 'Toggle on to activate ambient noise control.',
-                        style: TextStyle(color: cs.onSurfaceVariant),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-                Switch(
-                  value: isAncOn,
-                  onChanged: (loadingAnc || togglingAnc)
-                      ? null
-                      : (v) => _toggleAnc(v),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'anc',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: isAncOn ? cs.primary : cs.onSurfaceVariant,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         if (loadingAnc || togglingAnc)
@@ -95,16 +94,27 @@ class _HomeTabState extends State<HomeTab> {
               style: TextStyle(color: cs.error, fontSize: 12),
             ),
           ),
-        if (isFocus)
-          Padding(
-            padding: const EdgeInsets.only(top: 6, bottom: 6),
-            child: Text(
-              'Focus Mode: all rules ON & 100% — editing disabled.',
-              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+
+        const SizedBox(height: 30),
+        Padding(
+          padding: const EdgeInsets.only(left: 10, bottom: 8),
+          child: Text(
+            '소음 리스트',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface,
             ),
           ),
-        const SizedBox(height: 8),
-
+        ),
+        if (isFocus)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 6, left: 8),
+            child: Text(
+              '집중 모드: 모든 노이즈 감소 규칙이 활성화 되었습니다.',
+              style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
+            ),
+          ),
         ...rules.map(
           (r) => _NoiseRuleTile(
             rule: r,

@@ -19,7 +19,7 @@ class GoyoDeviceService {
 
       final ptrRecords = client
           .lookup<PtrResourceRecord>(
-            const ResourceRecordQuery.serverPointer('_goyo._tcp.local'),
+            ResourceRecordQuery.serverPointer('_goyo._tcp.local'),
           )
           .timeout(discoveryTimeout);
 
@@ -56,7 +56,7 @@ class GoyoDeviceService {
       // 검색 시간 초과 시 발견된 장치까지만 반환
     } finally {
       try {
-        await client.stop();
+        client.stop();
       } catch (_) {}
     }
 
@@ -107,10 +107,15 @@ class GoyoDeviceService {
           .timeout(const Duration(seconds: 2));
 
       await for (final txt in stream) {
-        for (final entry in txt.text) {
+        // txt.text 는 String 하나이므로, 구분자 기준으로 잘라서 사용
+        for (final entry in txt.text.split('\n')) {
+          if (entry.isEmpty) continue;
+
           final idx = entry.indexOf('=');
           if (idx > 0 && idx < entry.length - 1) {
-            records[entry.substring(0, idx)] = entry.substring(idx + 1);
+            final key = entry.substring(0, idx);
+            final value = entry.substring(idx + 1);
+            records[key] = value;
           }
         }
       }
