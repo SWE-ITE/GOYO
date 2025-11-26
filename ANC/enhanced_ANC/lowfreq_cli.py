@@ -27,53 +27,41 @@ if str(REPO_ROOT) not in sys.path:
 
 from ANC.basic_ANC.fxlms_controller import AncMetrics
 from ANC.basic_ANC.session_utils import create_controller, play_reference
+from ANC.enhanced_ANC import config as cfg
+from ANC.enhanced_ANC import io_utils
 from ANC.enhanced_ANC.fxlms_controller_numba import NumbaFxLMSANC
 
-ANC_ROOT = Path(__file__).resolve().parent.parent
-
-# Core configuration (adjust to match your hardware)
-REFERENCE_PATH = ANC_ROOT / "src" / "sine_200Hz200s.wav"
-SECONDARY_PATH = ANC_ROOT / "enhanced_ANC" / "secondary_path.npy"
-
-CONTROL_DEVICE: Optional[int] = 9  # Anti-noise playback device
-RECORD_DEVICE: Optional[int] = 9  # Aggregate device containing error+ref mics
-REFERENCE_DEVICE: Optional[int] = 9  # Dedicated reference playback device
-REFERENCE_INPUT_DEVICE: Optional[int] = None  # Standalone reference mic device index
-
-ERROR_INPUT_CHANNEL: int = 0  # Channel on RECORD_DEVICE for the error mic
-REFERENCE_INPUT_CHANNEL: Optional[int] = 1  # Channel on RECORD_DEVICE for the reference mic
-
-CONTROL_OUTPUT_CHANNEL: int = 0  # Channel on CONTROL_DEVICE for anti-noise
-REFERENCE_OUTPUT_CHANNEL: int = None  # Channel on REFERENCE_DEVICE for reference playback
-REFERENCE_SAMPLE_RATE: Optional[int] = 48_000  # Required when using a live reference mic
-
-# Adaptation behaviour
-REFERENCE_LOWPASS_HZ: Optional[float] = 210.0  # Low-pass cutoff to bias adaptation to LF
+REFERENCE_PATH = cfg.REFERENCE_PATH
+SECONDARY_PATH = cfg.SECONDARY_PATH
+CONTROL_DEVICE = cfg.CONTROL_DEVICE
+RECORD_DEVICE = cfg.RECORD_DEVICE
+REFERENCE_DEVICE = cfg.REFERENCE_DEVICE
+REFERENCE_INPUT_DEVICE = cfg.REFERENCE_INPUT_DEVICE
+ERROR_INPUT_CHANNEL = cfg.ERROR_INPUT_CHANNEL
+REFERENCE_INPUT_CHANNEL = cfg.REFERENCE_INPUT_CHANNEL
+CONTROL_OUTPUT_CHANNEL = cfg.CONTROL_OUTPUT_CHANNEL
+REFERENCE_OUTPUT_CHANNEL = cfg.REFERENCE_OUTPUT_CHANNEL
+REFERENCE_SAMPLE_RATE = cfg.REFERENCE_SAMPLE_RATE
+REFERENCE_LOWPASS_HZ = cfg.REFERENCE_LOWPASS_HZ
 FILTER_LENGTH: Optional[int] = 256
-BLOCK_SIZE: Optional[int] = 64
-STEP_SIZE = 1e-3
-LEAKAGE = 1e-6
-CONTROL_OUTPUT_GAIN: float = 2.0
-
-# Runtime options
-MANUAL_GAIN_MODE = False
-MANUAL_K = -0.4
-LOOP_REFERENCE = True
-RUN_DURATION: Optional[float] = None
-PLAY_REFERENCE = False
-PREROLL_SECONDS = 0  # For live-reference playback before ANC starts
-
-# Metrics/logging
-METRICS_EVERY = 200
-REF_MIN = 0.05
-SKIP_INITIAL_FRAMES = 40
-
-# Measurement settings
-MEASUREMENT_DURATION = 3.0
-EXCITATION_LEVEL = 0.1
-MEASUREMENT_FIR_LENGTH = 256
-MEASUREMENT_SAMPLE_RATE = 48_000
-MEASUREMENT_REPEATS = 5
+BLOCK_SIZE = cfg.BLOCK_SIZE
+STEP_SIZE = cfg.STEP_SIZE
+LEAKAGE = cfg.LEAKAGE
+CONTROL_OUTPUT_GAIN = cfg.CONTROL_OUTPUT_GAIN
+MANUAL_GAIN_MODE = cfg.MANUAL_GAIN_MODE
+MANUAL_K = cfg.MANUAL_K
+LOOP_REFERENCE = cfg.LOOP_REFERENCE
+RUN_DURATION = cfg.RUN_DURATION
+PLAY_REFERENCE = cfg.PLAY_REFERENCE
+PREROLL_SECONDS = cfg.PREROLL_SECONDS
+METRICS_EVERY = cfg.METRICS_EVERY
+REF_MIN = cfg.REF_MIN
+SKIP_INITIAL_FRAMES = cfg.SKIP_INITIAL_FRAMES
+MEASUREMENT_DURATION = cfg.MEASUREMENT_DURATION
+EXCITATION_LEVEL = cfg.EXCITATION_LEVEL
+MEASUREMENT_FIR_LENGTH = cfg.MEASUREMENT_FIR_LENGTH
+MEASUREMENT_SAMPLE_RATE = cfg.MEASUREMENT_SAMPLE_RATE
+MEASUREMENT_REPEATS = cfg.MEASUREMENT_REPEATS
 
 
 def live_reference_enabled() -> bool:
@@ -97,7 +85,7 @@ def ensure_secondary_path() -> None:
     if SECONDARY_PATH.exists():
         return
     logging.info("Secondary path missing; measuring now to %s", SECONDARY_PATH)
-    measure_secondary_path()
+    io_utils.measure_secondary_path()
 
 
 def run_lowfreq_anc(log_metrics: bool = False) -> None:
@@ -191,44 +179,6 @@ def run_lowfreq_anc(log_metrics: bool = False) -> None:
         logging.info("Session mean_err_rms=%.6f over %d frames", mean_err, len(metrics_log))
 
 
-def measure_secondary_path() -> None:
-    controller = create_controller(
-        reference_path=None,
-        control_device=CONTROL_DEVICE,
-        record_device=RECORD_DEVICE,
-        error_input_channel=ERROR_INPUT_CHANNEL,
-        sample_rate=MEASUREMENT_SAMPLE_RATE,
-        require_reference=False,
-        play_reference=False,
-        block_size=BLOCK_SIZE,
-        filter_length=FILTER_LENGTH,
-        controller_cls=NumbaFxLMSANC,
-    )
-    try:
-        logging.info(
-            "Measuring secondary path (%d runs): duration=%.2fs level=%.3f taps=%d",
-            MEASUREMENT_REPEATS,
-            MEASUREMENT_DURATION,
-            EXCITATION_LEVEL,
-            MEASUREMENT_FIR_LENGTH,
-        )
-        tap_sets = []
-        for idx in range(MEASUREMENT_REPEATS):
-            logging.info("Measurement run %d/%d", idx + 1, MEASUREMENT_REPEATS)
-            taps = controller.measure_secondary_path(
-                duration=MEASUREMENT_DURATION,
-                excitation_level=EXCITATION_LEVEL,
-                fir_length=MEASUREMENT_FIR_LENGTH,
-            )
-            tap_sets.append(taps)
-        averaged_taps = np.mean(np.stack(tap_sets, axis=0), axis=0)
-        SECONDARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-        np.save(SECONDARY_PATH, averaged_taps)
-        logging.info("Saved secondary path to %s", SECONDARY_PATH)
-    finally:
-        controller.stop()
-
-
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run low-frequency-focused ANC (anc or measure).",
@@ -253,7 +203,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
     validate_configuration(args.mode)
     if args.mode == "measure":
-        measure_secondary_path()
+        io_utils.measure_secondary_path()
     else:
         run_lowfreq_anc(log_metrics=args.log_metrics)
     return 0
