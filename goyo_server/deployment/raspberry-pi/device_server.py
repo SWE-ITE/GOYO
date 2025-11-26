@@ -158,14 +158,26 @@ def configure():
         logger.info(f"   Broker: {config_data['mqtt_broker_host']}:{config_data['mqtt_broker_port']}")
         logger.info(f"   User ID: {config_data['user_id']}")
 
-        # audio_client를 재시작하여 새 설정 적용
-        # systemctl restart goyo-audio (서비스로 실행 시)
-        logger.info("ℹ️  Restart audio_client to apply new configuration")
+        # audio_client를 자동으로 재시작하여 새 설정 적용
+        try:
+            import subprocess
+            result = subprocess.run(
+                ['sudo', 'systemctl', 'restart', 'goyo-audio'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                logger.info("✅ Audio client restarted successfully")
+            else:
+                logger.warning(f"⚠️  Failed to restart audio client: {result.stderr}")
+        except Exception as e:
+            logger.warning(f"⚠️  Could not restart audio client: {e}")
 
         return jsonify({
             "message": "Configuration saved successfully",
             "device_id": get_device_id(),
-            "restart_required": True
+            "audio_client_restarted": True
         }), 200
 
     except Exception as e:
