@@ -52,6 +52,7 @@ def create_controller(
     manual_gain_mode: bool = False,
     manual_gain: float = 0.0,
     leakage: float = 1e-4,
+    reference_lowpass_hz: Optional[float] = None,
 ) -> FxLMSANC:
     """
     Construct an ``FxLMSANC`` instance with shared configuration defaults.
@@ -86,6 +87,8 @@ def create_controller(
         init_kwargs["filter_length"] = filter_length
     if sample_rate is not None:
         init_kwargs["sample_rate"] = sample_rate
+    if reference_lowpass_hz is not None:
+        init_kwargs["reference_lowpass_hz"] = reference_lowpass_hz
 
     return FxLMSANC(**init_kwargs)
 

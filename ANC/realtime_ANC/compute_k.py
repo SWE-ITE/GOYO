@@ -23,7 +23,7 @@ REFERENCE_INPUT_CHANNEL: Optional[int] = 1  # Channel on RECORD_DEVICE for the r
 CONTROL_OUTPUT_CHANNEL: int = 0  # Channel on CONTROL_DEVICE for anti-noise
 REFERENCE_OUTPUT_CHANNEL: int = 2  # Channel on REFERENCE_DEVICE for reference playback
 
-CONTROL_OUTPUT_GAIN: float = 1.0
+CONTROL_OUTPUT_GAIN: float = 0.5
 STEP_SIZE = 1e-4
 BLOCK_SIZE: Optional[int] = 64
 FILTER_LENGTH: Optional[int] = 256
@@ -37,12 +37,12 @@ from pathlib import Path  # noqa
 
 ANC_ROOT = Path(__file__).resolve().parent.parent
 REFERENCE_PATH = ANC_ROOT / "src" / "sine_200Hz.wav"
-SECONDARY_PATH = ANC_ROOT / "realtime_ANC" / "secondary_path.npy"
+SECONDARY_PATH = ANC_ROOT / "enhanced_ANC" / "secondary_path.npy"
 
 # Experiment parameters (fixed here)
 TRIAL_DURATION = 8.0  # seconds per trial
 SKIP_INITIAL_FRAMES = 50  # ignore first N frames in averaging (settling)
-SWEEP_KS = np.linspace(-0.2, 0.0, num=21, endpoint=True)  # inclusive sweep
+SWEEP_KS = np.linspace(-1.0, 1.0, num=21, endpoint=True)  # inclusive sweep
 
 
 @dataclass
