@@ -83,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Welcome to ANC',
+                      'Welcome to GOYO',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 24,

@@ -27,52 +27,41 @@ if str(REPO_ROOT) not in sys.path:
 
 from ANC.basic_ANC.fxlms_controller import AncMetrics
 from ANC.basic_ANC.session_utils import create_controller, play_reference
+from ANC.enhanced_ANC import config as cfg
+from ANC.enhanced_ANC import io_utils
+from ANC.enhanced_ANC.fxlms_controller_numba import NumbaFxLMSANC
 
-ANC_ROOT = Path(__file__).resolve().parent.parent
-
-# Core configuration (adjust to match your hardware)
-REFERENCE_PATH = ANC_ROOT / "src" / "sine_200Hz.wav"
-SECONDARY_PATH = ANC_ROOT / "enhanced_ANC" / "secondary_path.npy"
-
-CONTROL_DEVICE: Optional[int] = 10  # Anti-noise playback device
-RECORD_DEVICE: Optional[int] = 10  # Aggregate device containing error+ref mics
-REFERENCE_DEVICE: Optional[int] = 10  # Dedicated reference playback device
-REFERENCE_INPUT_DEVICE: Optional[int] = None  # Standalone reference mic device index
-
-ERROR_INPUT_CHANNEL: int = 0  # Channel on RECORD_DEVICE for the error mic
-REFERENCE_INPUT_CHANNEL: Optional[int] = 1  # Channel on RECORD_DEVICE for the reference mic
-
-CONTROL_OUTPUT_CHANNEL: int = 0  # Channel on CONTROL_DEVICE for anti-noise
-REFERENCE_OUTPUT_CHANNEL: int = 2  # Channel on REFERENCE_DEVICE for reference playback
-REFERENCE_SAMPLE_RATE: Optional[int] = 48_000  # Required when using a live reference mic
-
-# Adaptation behaviour
-REFERENCE_LOWPASS_HZ: Optional[float] = 400.0  # Low-pass cutoff to bias adaptation to LF
-FILTER_LENGTH: Optional[int] = 512
-BLOCK_SIZE: Optional[int] = 128
-STEP_SIZE = 1e-5
-LEAKAGE = 1e-6
-CONTROL_OUTPUT_GAIN: float = 0.5
-
-# Runtime options
-MANUAL_GAIN_MODE = False
-MANUAL_K = -0.5
-LOOP_REFERENCE = True
-RUN_DURATION: Optional[float] = None
-PLAY_REFERENCE = True
-PREROLL_SECONDS = 3.0  # For live-reference playback before ANC starts
-
-# Metrics/logging
-METRICS_EVERY = 200
-REF_MIN = 0.05
-SKIP_INITIAL_FRAMES = 40
-
-# Measurement settings
-MEASUREMENT_DURATION = 3.0
-EXCITATION_LEVEL = 0.1
-MEASUREMENT_FIR_LENGTH = 256
-MEASUREMENT_SAMPLE_RATE = 48_000
-MEASUREMENT_REPEATS = 5
+REFERENCE_PATH = cfg.REFERENCE_PATH
+SECONDARY_PATH = cfg.SECONDARY_PATH
+CONTROL_DEVICE = cfg.CONTROL_DEVICE
+RECORD_DEVICE = cfg.RECORD_DEVICE
+REFERENCE_DEVICE = cfg.REFERENCE_DEVICE
+REFERENCE_INPUT_DEVICE = cfg.REFERENCE_INPUT_DEVICE
+ERROR_INPUT_CHANNEL = cfg.ERROR_INPUT_CHANNEL
+REFERENCE_INPUT_CHANNEL = cfg.REFERENCE_INPUT_CHANNEL
+CONTROL_OUTPUT_CHANNEL = cfg.CONTROL_OUTPUT_CHANNEL
+REFERENCE_OUTPUT_CHANNEL = cfg.REFERENCE_OUTPUT_CHANNEL
+REFERENCE_SAMPLE_RATE = cfg.REFERENCE_SAMPLE_RATE
+REFERENCE_LOWPASS_HZ = cfg.REFERENCE_LOWPASS_HZ
+FILTER_LENGTH: Optional[int] = 256
+BLOCK_SIZE = cfg.BLOCK_SIZE
+STEP_SIZE = cfg.STEP_SIZE
+LEAKAGE = cfg.LEAKAGE
+CONTROL_OUTPUT_GAIN = cfg.CONTROL_OUTPUT_GAIN
+MANUAL_GAIN_MODE = cfg.MANUAL_GAIN_MODE
+MANUAL_K = cfg.MANUAL_K
+LOOP_REFERENCE = cfg.LOOP_REFERENCE
+RUN_DURATION = cfg.RUN_DURATION
+PLAY_REFERENCE = cfg.PLAY_REFERENCE
+PREROLL_SECONDS = cfg.PREROLL_SECONDS
+METRICS_EVERY = cfg.METRICS_EVERY
+REF_MIN = cfg.REF_MIN
+SKIP_INITIAL_FRAMES = cfg.SKIP_INITIAL_FRAMES
+MEASUREMENT_DURATION = cfg.MEASUREMENT_DURATION
+EXCITATION_LEVEL = cfg.EXCITATION_LEVEL
+MEASUREMENT_FIR_LENGTH = cfg.MEASUREMENT_FIR_LENGTH
+MEASUREMENT_SAMPLE_RATE = cfg.MEASUREMENT_SAMPLE_RATE
+MEASUREMENT_REPEATS = cfg.MEASUREMENT_REPEATS
 
 
 def live_reference_enabled() -> bool:
@@ -96,13 +85,12 @@ def ensure_secondary_path() -> None:
     if SECONDARY_PATH.exists():
         return
     logging.info("Secondary path missing; measuring now to %s", SECONDARY_PATH)
-    measure_secondary_path()
+    io_utils.measure_secondary_path()
 
 
-def run_lowfreq_anc(plot_error_live: bool = False) -> None:
+def run_lowfreq_anc(log_metrics: bool = False) -> None:
     ensure_secondary_path()
     use_live_reference = live_reference_enabled()
-    live_plotter = _create_live_plotter() if plot_error_live else None
     playback_thread: Optional[threading.Thread] = None
     metrics_log: list[AncMetrics] = []
     err_sum = 0.0
@@ -151,18 +139,17 @@ def run_lowfreq_anc(plot_error_live: bool = False) -> None:
         manual_gain=MANUAL_K,
         leakage=LEAKAGE,
         reference_lowpass_hz=REFERENCE_LOWPASS_HZ,
+        controller_cls=NumbaFxLMSANC,
     )
 
-    def log_metrics(metrics: AncMetrics) -> None:
-        if METRICS_EVERY <= 0:
+    def log_metrics_cb(metrics: AncMetrics) -> None:
+        if not log_metrics or METRICS_EVERY <= 0:
             return
         metrics_log.append(metrics)
         if metrics.frame_index >= SKIP_INITIAL_FRAMES and metrics.reference_rms > REF_MIN:
             nonlocal err_sum, err_count
             err_sum += metrics.error_rms
             err_count += 1
-        if live_plotter is not None:
-            live_plotter.tick(metrics)
         if metrics.frame_index % METRICS_EVERY == 0:
             logging.info(
                 "frame=%05d err_rms=%.6f ref_rms=%.6f out_rms=%.6f",
@@ -181,54 +168,15 @@ def run_lowfreq_anc(plot_error_live: bool = False) -> None:
         controller.run(
             loop_reference=LOOP_REFERENCE,
             max_duration=RUN_DURATION,
-            metrics_callback=log_metrics if METRICS_EVERY > 0 else None,
+            metrics_callback=log_metrics_cb if log_metrics and METRICS_EVERY > 0 else None,
         )
     except KeyboardInterrupt:
         logging.info("ANC stopped by user.")
-    if live_plotter is not None:
-        live_plotter.close()
     if playback_thread is not None:
         playback_thread.join(timeout=1.0)
-    if metrics_log:
+    if log_metrics and metrics_log:
         mean_err = float(np.mean([m.error_rms for m in metrics_log]))
         logging.info("Session mean_err_rms=%.6f over %d frames", mean_err, len(metrics_log))
-
-
-def measure_secondary_path() -> None:
-    controller = create_controller(
-        reference_path=None,
-        control_device=CONTROL_DEVICE,
-        record_device=RECORD_DEVICE,
-        error_input_channel=ERROR_INPUT_CHANNEL,
-        sample_rate=MEASUREMENT_SAMPLE_RATE,
-        require_reference=False,
-        play_reference=False,
-        block_size=BLOCK_SIZE,
-        filter_length=FILTER_LENGTH,
-    )
-    try:
-        logging.info(
-            "Measuring secondary path (%d runs): duration=%.2fs level=%.3f taps=%d",
-            MEASUREMENT_REPEATS,
-            MEASUREMENT_DURATION,
-            EXCITATION_LEVEL,
-            MEASUREMENT_FIR_LENGTH,
-        )
-        tap_sets = []
-        for idx in range(MEASUREMENT_REPEATS):
-            logging.info("Measurement run %d/%d", idx + 1, MEASUREMENT_REPEATS)
-            taps = controller.measure_secondary_path(
-                duration=MEASUREMENT_DURATION,
-                excitation_level=EXCITATION_LEVEL,
-                fir_length=MEASUREMENT_FIR_LENGTH,
-            )
-            tap_sets.append(taps)
-        averaged_taps = np.mean(np.stack(tap_sets, axis=0), axis=0)
-        SECONDARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-        np.save(SECONDARY_PATH, averaged_taps)
-        logging.info("Saved secondary path to %s", SECONDARY_PATH)
-    finally:
-        controller.stop()
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
@@ -243,9 +191,9 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         help="Mode to execute (default: anc).",
     )
     parser.add_argument(
-        "--plot-error-live",
+        "--log-metrics",
         action="store_true",
-        help="Show a live-updating error RMS plot during ANC.",
+        help="Periodically log RMS metrics instead of staying quiet.",
     )
     return parser.parse_args(argv)
 
@@ -255,52 +203,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
     validate_configuration(args.mode)
     if args.mode == "measure":
-        measure_secondary_path()
+        io_utils.measure_secondary_path()
     else:
-        run_lowfreq_anc(plot_error_live=args.plot_error_live)
+        run_lowfreq_anc(log_metrics=args.log_metrics)
     return 0
-
-
-class _LivePlotter:
-    """Lightweight live plot for error RMS."""
-
-    def __init__(self) -> None:
-        import matplotlib.pyplot as plt
-
-        plt.ion()
-        self.plt = plt
-        self.fig, self.ax = plt.subplots(num="Low-Frequency ANC Error RMS (live)")
-        (self.line,) = self.ax.plot([], [], marker=".", linewidth=1)
-        self.ax.set_xlabel("Frame")
-        self.ax.set_ylabel("Error RMS")
-        self.ax.grid(True, which="both", linestyle="--", alpha=0.5)
-        self.fig.tight_layout()
-        self.frames: list[int] = []
-        self.errors: list[float] = []
-
-    def tick(self, metrics: AncMetrics) -> None:
-        self.frames.append(metrics.frame_index)
-        self.errors.append(metrics.error_rms)
-        self.line.set_data(self.frames, self.errors)
-        if self.frames:
-            self.ax.set_xlim(0, max(self.frames))
-        if self.errors:
-            self.ax.set_ylim(0, max(self.errors) * 1.1 if max(self.errors) > 0 else 1.0)
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
-        self.plt.pause(0.001)
-
-    def close(self) -> None:
-        self.plt.ioff()
-        self.plt.show()
-
-
-def _create_live_plotter() -> Optional["_LivePlotter"]:
-    try:
-        return _LivePlotter()
-    except Exception as exc:  # pragma: no cover - UI helper
-        logging.warning("Unable to start live plot (matplotlib unavailable): %s", exc)
-        return None
 
 
 if __name__ == "__main__":

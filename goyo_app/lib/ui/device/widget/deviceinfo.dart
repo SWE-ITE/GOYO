@@ -12,7 +12,6 @@ class DeviceInfo extends StatefulWidget {
 }
 
 class _DeviceInfoState extends State<DeviceInfo> {
-
   Future<void> _confirmDelete(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -65,9 +64,9 @@ class _DeviceInfoState extends State<DeviceInfo> {
     } catch (e) {
       if (navigator.canPop()) navigator.pop();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('삭제에 실패했어요: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('삭제에 실패했어요: $e')));
       }
     }
   }
@@ -105,8 +104,10 @@ class _DeviceInfoState extends State<DeviceInfo> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.device.deviceName,
-                    style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  widget.device.deviceName,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: 8),
                 Text('연결: ${status.isConnected ? 'ON' : 'OFF'}'),
                 Text('캘리브레이션: ${status.isCalibrated ? '완료' : '필요'}'),
@@ -125,9 +126,9 @@ class _DeviceInfoState extends State<DeviceInfo> {
     } catch (e) {
       if (navigator.canPop()) navigator.pop();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('상태 확인 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('상태 확인 실패: $e')));
       }
     }
   }
@@ -158,18 +159,16 @@ class _DeviceInfoState extends State<DeviceInfo> {
       if (navigator.canPop()) navigator.pop();
       if (context.mounted) {
         final message = result['message'] ?? '완료되었습니다.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('캘리브레이션 완료: $message'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('캘리브레이션 완료: $message')));
       }
     } catch (e) {
       if (navigator.canPop()) navigator.pop();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('캘리브레이션 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('캘리브레이션 실패: $e')));
       }
     }
   }
@@ -195,7 +194,7 @@ class _DeviceInfoState extends State<DeviceInfo> {
               widget.device.deviceName,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
-            subtitle: Text(isConn ? 'Connected' : 'Not Connected'),
+            subtitle: Text(isConn ? 'Connected' : 'Connected'),
           ),
           const Divider(),
           ListTile(
