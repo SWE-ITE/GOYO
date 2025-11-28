@@ -41,3 +41,11 @@ def verify_token(token: str):
         return email
     except JWTError:
         return None
+
+def verify_access_token(token: str):
+    """Access 토큰 검증 및 payload 반환"""
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        return payload
+    except JWTError:
+        return None

@@ -4,7 +4,9 @@ MQTT 메시지 모니터링 및 로깅 (AI Server가 직접 구독)
 """
 import json
 import logging
+import asyncio
 from typing import Optional
+from datetime import datetime
 import paho.mqtt.client as mqtt
 from app.config import settings
 
@@ -22,13 +24,19 @@ class MQTTService:
             logger.info("✅ Connected to MQTT Broker")
             self.is_connected = True
 
-            # 상태 및 모니터링 토픽만 구독 (로깅용)
+            # 상태 및 모니터링 토픽 구독
             client.subscribe("mqtt/status/#", qos=1)
             client.subscribe("mqtt/anc/result/#", qos=0)
 
-            logger.info("📡 Subscribed to MQTT topics (monitoring only):")
+            # 소음 감지 토픽 구독 (실시간 알림용)
+            client.subscribe("mqtt/noise/detected/#", qos=1)
+            client.subscribe("mqtt/noise/stopped/#", qos=1)
+
+            logger.info("📡 Subscribed to MQTT topics:")
             logger.info("   - mqtt/status/#")
             logger.info("   - mqtt/anc/result/#")
+            logger.info("   - mqtt/noise/detected/#")
+            logger.info("   - mqtt/noise/stopped/#")
             logger.info("ℹ️  Audio topics are handled directly by AI Server")
         else:
             logger.error(f"❌ Failed to connect to MQTT Broker, return code {rc}")
@@ -47,7 +55,7 @@ class MQTTService:
                 logger.error(f"Reconnection failed: {e}")
 
     def on_message(self, client, userdata, msg):
-        """MQTT 메시지 수신 시 호출 - 로깅 및 모니터링만"""
+        """MQTT 메시지 수신 시 호출 - 로깅 및 실시간 알림"""
         try:
             topic = msg.topic
             payload = json.loads(msg.payload.decode('utf-8'))
@@ -56,12 +64,20 @@ class MQTTService:
             if "status" in topic:
                 # 디바이스 상태 보고
                 logger.info(f"📊 Status update: {topic} - {payload}")
-                # TODO: 상태를 DB에 저장 (필요 시)
 
             elif "anc/result" in topic:
                 # ANC 처리 결과 (모니터링용)
                 logger.debug(f"📈 ANC result: {topic} - {payload}")
-                # TODO: 결과를 DB에 저장하거나 프론트엔드로 전달 (필요 시)
+
+            elif "noise/detected" in topic:
+                # 소음 감지 - WebSocket으로 실시간 알림
+                logger.info(f"🔊 Noise detected: {topic} - {payload}")
+                self._handle_noise_detected(payload)
+
+            elif "noise/stopped" in topic:
+                # 소음 종료 - WebSocket으로 실시간 알림
+                logger.info(f"🔇 Noise stopped: {topic} - {payload}")
+                self._handle_noise_stopped(payload)
 
             else:
                 logger.debug(f"📨 MQTT message: {topic}")
@@ -70,6 +86,122 @@ class MQTTService:
             logger.error(f"❌ Invalid JSON payload from topic: {msg.topic}")
         except Exception as e:
             logger.error(f"❌ Error processing MQTT message: {e}", exc_info=True)
+
+    def _handle_noise_detected(self, payload: dict):
+        """소음 감지 처리 - DB 업데이트 및 WebSocket 알림"""
+        try:
+            user_id = payload.get("user_id")
+            appliance_name = payload.get("appliance_name")
+
+            if not user_id or not appliance_name:
+                logger.warning(f"⚠️ Invalid noise detected payload: {payload}")
+                return
+
+            # DB 업데이트
+            from app.database import SessionLocal
+            from app.models.appliance import Appliance
+
+            db = SessionLocal()
+            try:
+                appliance = db.query(Appliance).filter(
+                    Appliance.user_id == user_id,
+                    Appliance.appliance_name == appliance_name
+                ).first()
+
+                if appliance:
+                    appliance.is_noise_active = True
+                    db.commit()
+                    db.refresh(appliance)
+
+                    # WebSocket으로 실시간 알림
+                    self._send_websocket_notification(
+                        user_id=user_id,
+                        notification_type="appliance_noise_detected",
+                        data={
+                            "appliance_id": appliance.id,
+                            "appliance_name": appliance.appliance_name,
+                            "is_noise_active": True,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    )
+                    logger.info(f"✅ Appliance {appliance_name} marked as active for user {user_id}")
+                else:
+                    logger.warning(f"⚠️ Appliance {appliance_name} not found for user {user_id}")
+
+            finally:
+                db.close()
+
+        except Exception as e:
+            logger.error(f"❌ Error handling noise detected: {e}", exc_info=True)
+
+    def _handle_noise_stopped(self, payload: dict):
+        """소음 종료 처리 - DB 업데이트 및 WebSocket 알림"""
+        try:
+            user_id = payload.get("user_id")
+            appliance_name = payload.get("appliance_name")
+
+            if not user_id or not appliance_name:
+                logger.warning(f"⚠️ Invalid noise stopped payload: {payload}")
+                return
+
+            # DB 업데이트
+            from app.database import SessionLocal
+            from app.models.appliance import Appliance
+
+            db = SessionLocal()
+            try:
+                appliance = db.query(Appliance).filter(
+                    Appliance.user_id == user_id,
+                    Appliance.appliance_name == appliance_name
+                ).first()
+
+                if appliance:
+                    appliance.is_noise_active = False
+                    db.commit()
+                    db.refresh(appliance)
+
+                    # WebSocket으로 실시간 알림
+                    self._send_websocket_notification(
+                        user_id=user_id,
+                        notification_type="appliance_noise_stopped",
+                        data={
+                            "appliance_id": appliance.id,
+                            "appliance_name": appliance.appliance_name,
+                            "is_noise_active": False,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    )
+                    logger.info(f"✅ Appliance {appliance_name} marked as inactive for user {user_id}")
+                else:
+                    logger.warning(f"⚠️ Appliance {appliance_name} not found for user {user_id}")
+
+            finally:
+                db.close()
+
+        except Exception as e:
+            logger.error(f"❌ Error handling noise stopped: {e}", exc_info=True)
+
+    def _send_websocket_notification(self, user_id: int, notification_type: str, data: dict):
+        """WebSocket으로 알림 전송 (비동기 처리)"""
+        try:
+            from app.services.websocket_manager import websocket_manager
+
+            # asyncio 이벤트 루프에서 실행
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(
+                websocket_manager.send_personal_message(
+                    message={
+                        "type": notification_type,
+                        "data": data
+                    },
+                    user_id=user_id
+                )
+            )
+            loop.close()
+
+        except Exception as e:
+            logger.error(f"❌ Error sending WebSocket notification: {e}", exc_info=True)
 
     def on_log(self, client, userdata, level, buf):
         """MQTT 로그 (디버깅용)"""
