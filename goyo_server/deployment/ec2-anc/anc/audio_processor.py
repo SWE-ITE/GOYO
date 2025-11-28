@@ -89,14 +89,11 @@ class AudioProcessor:
 
         return self.reference_buffers[user_id], self.error_buffers[user_id]
 
-    def process_reference(self, user_id: str, audio_data: str, timestamp: float):
-        """Reference 마이크 데이터 처리"""
+    def process_reference(self, user_id: str, audio_data: bytes, timestamp: float):
+        """Reference 마이크 데이터 처리 (Binary Payload)"""
         try:
-            # Base64 디코딩
-            audio_bytes = base64.b64decode(audio_data)
-
-            # NumPy 배열로 변환
-            audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
+            # Binary bytes → NumPy 배열로 변환
+            audio_array = np.frombuffer(audio_data, dtype=np.int16)
 
             # 버퍼에 추가
             reference_buffer, _ = self._get_or_create_buffers(user_id)
@@ -107,14 +104,11 @@ class AudioProcessor:
         except Exception as e:
             logger.error(f"❌ Reference processing error: {e}")
 
-    def process_error(self, user_id: str, audio_data: str, timestamp: float):
-        """Error 마이크 데이터 처리"""
+    def process_error(self, user_id: str, audio_data: bytes, timestamp: float):
+        """Error 마이크 데이터 처리 (Binary Payload)"""
         try:
-            # Base64 디코딩
-            audio_bytes = base64.b64decode(audio_data)
-
-            # NumPy 배열로 변환
-            audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
+            # Binary bytes → NumPy 배열로 변환
+            audio_array = np.frombuffer(audio_data, dtype=np.int16)
 
             # 버퍼에 추가
             _, error_buffer = self._get_or_create_buffers(user_id)

@@ -1,14 +1,14 @@
 """
-MQTT Publisher for AI Server
-ANC 처리 후 안티노이즈 신호를 MQTT로 스피커에 전송
+MQTT Publisher for ANC Server
+ANC 처리 후 안티노이즈 신호를 Binary Payload로 MQTT 전송
 """
 import json
 import logging
+import struct
 import time
 from typing import Optional
 import paho.mqtt.client as mqtt
 import numpy as np
-import base64
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -18,6 +18,8 @@ class MQTTPublisher:
     def __init__(self):
         self.client: Optional[mqtt.Client] = None
         self.is_connected = False
+        # Sequence numbers for binary streaming (per user)
+        self.sequence_numbers = {}  # {user_id: sequence}
 
     def on_connect(self, client, userdata, flags, rc):
         """MQTT 브로커 연결 시 호출"""
@@ -124,7 +126,7 @@ class MQTTPublisher:
         latency_ms: float = 0.0
     ) -> bool:
         """
-        안티노이즈 신호를 MQTT로 스피커에 전송
+        안티노이즈 신호를 Binary Payload로 MQTT 전송
 
         Args:
             user_id: 사용자 ID
@@ -142,34 +144,31 @@ class MQTTPublisher:
             # Float32 → Int16 변환 (PCM16)
             anti_noise_int16 = (anti_noise_data * 32767).astype(np.int16)
 
-            # Base64 인코딩
-            audio_bytes = anti_noise_int16.tobytes()
-            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+            # Sequence number 가져오기/초기화
+            if user_id not in self.sequence_numbers:
+                self.sequence_numbers[user_id] = 0
 
-            # Payload 생성
-            payload = {
-                "user_id": user_id,
-                "anti_noise_data": audio_b64,
-                "timestamp": time.time(),
-                "sample_rate": settings.SAMPLE_RATE,
-                "channels": settings.CHANNELS,
-                "frame_count": len(anti_noise_data),
-                "latency_ms": round(latency_ms, 2)
-            }
+            seq = self.sequence_numbers[user_id]
+
+            # Binary Payload: [4 bytes: sequence] + [PCM16 audio]
+            payload = struct.pack('<I', seq) + anti_noise_int16.tobytes()
 
             # MQTT 발행
-            topic = f"mqtt/speaker/output/{user_id}"
+            topic = f"mqtt/speaker/output/{user_id}/stream"
             result = self.client.publish(
                 topic,
-                json.dumps(payload),
-                qos=1  # At least once delivery
+                payload,
+                qos=0  # Best effort for streaming
             )
 
             if result.rc == mqtt.MQTT_ERR_SUCCESS:
                 logger.debug(
                     f"📤 Published anti-noise to {topic} "
-                    f"({len(anti_noise_data)} samples, {latency_ms:.1f}ms latency)"
+                    f"(seq={seq}, {len(anti_noise_data)} samples, {latency_ms:.1f}ms latency)"
                 )
+
+                # Sequence number 증가 (uint32 wraparound)
+                self.sequence_numbers[user_id] = (seq + 1) % 4294967296
                 return True
             else:
                 logger.error(f"❌ Failed to publish anti-noise: rc={result.rc}")

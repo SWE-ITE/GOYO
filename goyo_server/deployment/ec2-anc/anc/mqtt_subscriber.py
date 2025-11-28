@@ -1,9 +1,10 @@
 """
-MQTT Subscriber for AI Server
-MQTT Broker에서 직접 오디오 데이터 구독 (Redis Pub/Sub 대체)
+MQTT Subscriber for ANC Server
+MQTT Broker에서 직접 오디오 데이터 구독 (Binary Payload)
 """
 import json
 import logging
+import struct
 import time
 from typing import Optional, Callable
 import paho.mqtt.client as mqtt
@@ -31,14 +32,18 @@ class MQTTSubscriber:
             logger.info("✅ ANC Server connected to MQTT Broker")
             self.is_connected = True
 
-            # 오디오 토픽 구독
-            client.subscribe("mqtt/audio/reference/#", qos=1)
-            client.subscribe("mqtt/audio/error/#", qos=1)
+            # 오디오 스트림 및 설정 토픽 구독
+            client.subscribe("mqtt/audio/reference/+/stream", qos=0)  # Binary stream
+            client.subscribe("mqtt/audio/reference/+/config", qos=1)  # Config (retained)
+            client.subscribe("mqtt/audio/error/+/stream", qos=0)      # Binary stream
+            client.subscribe("mqtt/audio/error/+/config", qos=1)      # Config (retained)
             client.subscribe("mqtt/control/anc/#", qos=1)
 
             logger.info("📡 Subscribed to MQTT topics:")
-            logger.info("   - mqtt/audio/reference/#")
-            logger.info("   - mqtt/audio/error/#")
+            logger.info("   - mqtt/audio/reference/+/stream (binary)")
+            logger.info("   - mqtt/audio/reference/+/config (retained)")
+            logger.info("   - mqtt/audio/error/+/stream (binary)")
+            logger.info("   - mqtt/audio/error/+/config (retained)")
             logger.info("   - mqtt/control/anc/#")
         else:
             logger.error(f"❌ Failed to connect to MQTT Broker, return code {rc}")
@@ -57,31 +62,72 @@ class MQTTSubscriber:
                 logger.error(f"Reconnection failed: {e}")
 
     def on_message(self, client, userdata, msg):
-        """MQTT 메시지 수신"""
+        """MQTT 메시지 수신 - Binary Payload 또는 JSON"""
         try:
             topic = msg.topic
-            payload = json.loads(msg.payload.decode('utf-8'))
 
-            # Reference 마이크 데이터
-            if "audio/reference" in topic:
+            # Config 메시지 (JSON, retained)
+            if "/config" in topic:
+                config = json.loads(msg.payload.decode('utf-8'))
+                logger.debug(f"📡 Received config: {topic} - {config}")
+                # Config는 참고용, 실제 처리는 필요 없음
+                return
+
+            # Reference 마이크 데이터 (Binary Stream)
+            if "audio/reference" in topic and "/stream" in topic:
+                # Binary Payload: [4 bytes: sequence] + [PCM16 audio]
+                if len(msg.payload) < 4:
+                    logger.warning(f"⚠️ Invalid payload size: {len(msg.payload)}")
+                    return
+
+                sequence = struct.unpack('<I', msg.payload[:4])[0]
+                audio_bytes = msg.payload[4:]
+
+                # 사용자 ID 추출 (mqtt/audio/reference/{user_id}/stream)
+                user_id = topic.split('/')[3]
+
                 if self.on_reference_audio:
+                    payload = {
+                        "user_id": user_id,
+                        "sequence": sequence,
+                        "audio_data": audio_bytes,
+                        "timestamp": time.time()
+                    }
                     self.on_reference_audio(payload)
                 else:
                     logger.warning("No handler for reference audio")
 
-            # Error 마이크 데이터
-            elif "audio/error" in topic:
+            # Error 마이크 데이터 (Binary Stream)
+            elif "audio/error" in topic and "/stream" in topic:
+                # Binary Payload: [4 bytes: sequence] + [PCM16 audio]
+                if len(msg.payload) < 4:
+                    logger.warning(f"⚠️ Invalid payload size: {len(msg.payload)}")
+                    return
+
+                sequence = struct.unpack('<I', msg.payload[:4])[0]
+                audio_bytes = msg.payload[4:]
+
+                # 사용자 ID 추출
+                user_id = topic.split('/')[3]
+
                 if self.on_error_audio:
+                    payload = {
+                        "user_id": user_id,
+                        "sequence": sequence,
+                        "audio_data": audio_bytes,
+                        "timestamp": time.time()
+                    }
                     self.on_error_audio(payload)
                 else:
                     logger.warning("No handler for error audio")
 
-            # 제어 명령
+            # 제어 명령 (JSON)
             elif "control/anc" in topic:
+                control_payload = json.loads(msg.payload.decode('utf-8'))
                 if self.on_control:
-                    self.on_control(payload)
+                    self.on_control(control_payload)
                 else:
-                    logger.info(f"🎛️ Control message: {payload}")
+                    logger.info(f"🎛️ Control message: {control_payload}")
 
         except json.JSONDecodeError:
             logger.error(f"❌ Invalid JSON from topic: {msg.topic}")
