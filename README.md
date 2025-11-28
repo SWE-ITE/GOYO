@@ -1,8 +1,8 @@
 # GOYO  
 ### An AI-Based Active Noise Control System for Smart Home Environments
-PDF: [GOYO System Documentation](./documents/GOYO.pdf)
+PDF: [GOYO System Documentation](./Documents/GOYO.pdf)
 
-Latex: [GOYO System Documentation](./documents/GOYO.tex)
+LaTeX: [GOYO System Documentation](./Documents/GOYO.tex)
 
 ---
 
