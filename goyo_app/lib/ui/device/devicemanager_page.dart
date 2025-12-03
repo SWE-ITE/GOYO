@@ -39,9 +39,9 @@ class _DeviceManagerPageState extends State<DeviceManager> {
     DeviceDto(
       id: 3,
       userId: 1,
-      deviceId: 'robot-01',
-      deviceName: '로봇 청소기',
-      deviceType: 'robot_cleaner',
+      deviceId: 'purifier-01',
+      deviceName: '공기 청정기',
+      deviceType: 'air purifier',
       isConnected: true,
       connectionType: 'wifi',
       isCalibrated: false,
@@ -182,7 +182,7 @@ class _DeviceManagerPageState extends State<DeviceManager> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    '기존 IoT 디바이스 (데모)',
+                    '연결된 IoT 디바이스',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   TextButton.icon(

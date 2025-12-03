@@ -74,6 +74,20 @@ class _AccountRecoveryPageState extends State<AccountRecoveryPage>
                   validator: (v) =>
                       (v == null || v.isEmpty) ? '전화번호를 입력해 주세요' : null,
                 ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SizedBox(
+                    width: 100,
+                    height: 40,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _showPlaceholderMessage('인증발송');
+                      },
+                      child: const Text('인증발송'),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 40),
                 Text(
                   "인증번호",
@@ -86,6 +100,20 @@ class _AccountRecoveryPageState extends State<AccountRecoveryPage>
                   keyboardType: TextInputType.number,
                   validator: (v) =>
                       (v == null || v.isEmpty) ? '인증번호를 입력해 주세요' : null,
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SizedBox(
+                    width: 100,
+                    height: 40,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _showPlaceholderMessage('인증');
+                      },
+                      child: const Text('인증'),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 40),
               ],
@@ -180,6 +208,20 @@ class _AccountRecoveryPageState extends State<AccountRecoveryPage>
                   validator: (v) =>
                       (v == null || v.isEmpty) ? '전화번호를 입력해 주세요' : null,
                 ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SizedBox(
+                    width: 100,
+                    height: 36,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _showPlaceholderMessage('인증발송');
+                      },
+                      child: const Text('인증발송'),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 32),
 
                 // 인증번호
@@ -198,6 +240,20 @@ class _AccountRecoveryPageState extends State<AccountRecoveryPage>
                   validator: (v) =>
                       (v == null || v.isEmpty) ? '인증번호를 입력해 주세요' : null,
                 ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SizedBox(
+                    width: 100,
+                    height: 36,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _showPlaceholderMessage('인증');
+                      },
+                      child: const Text('인증'),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 40),
               ],
             ),
@@ -212,10 +268,10 @@ class _AccountRecoveryPageState extends State<AccountRecoveryPage>
               child: ElevatedButton(
                 onPressed: () {
                   if (_pwFormKey.currentState?.validate() ?? false) {
-                    _showPlaceholderMessage('비밀번호 찾기');
+                    _showPlaceholderMessage('비밀번호 변경');
                   }
                 },
-                child: const Text('비밀번호 찾기'),
+                child: const Text('비밀번호 변경'),
               ),
             ),
           ),
@@ -236,7 +292,7 @@ class _AccountRecoveryPageState extends State<AccountRecoveryPage>
           bottom: const TabBar(
             tabs: [
               Tab(text: '아이디 찾기'),
-              Tab(text: '비밀번호 찾기'),
+              Tab(text: '비밀번호 변경'),
             ],
           ),
         ),

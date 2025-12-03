@@ -20,7 +20,7 @@ class _HomePageState extends State<HomePage> {
     ProfilePage(), //
   ];
 
-  static const _titles = ['Device Manager', 'Home', 'Profile'];
+  static const _titles = ['기기 관리', '홈', '프로필'];
 
   @override
   Widget build(BuildContext context) {

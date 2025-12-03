@@ -13,16 +13,19 @@ class _SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _pwCtrl = TextEditingController();
+  final _pwConfirmCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
 
   bool _obscure = true;
+  bool _obscureConfirm = true;
   bool _loading = false;
 
   @override
   void dispose() {
     _emailCtrl.dispose();
     _pwCtrl.dispose();
+    _pwConfirmCtrl.dispose();
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     super.dispose();
@@ -77,7 +80,7 @@ class _SignUpPageState extends State<SignUpPage> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sign Up')),
+      appBar: AppBar(title: const Text('회원가입')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -91,7 +94,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // 이름
-                    Text('Name', style: TextStyle(color: cs.onSurfaceVariant)),
+                    Text('이름', style: TextStyle(color: cs.onSurfaceVariant)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _nameCtrl,
@@ -104,7 +107,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     const SizedBox(height: 14),
 
                     // 이메일
-                    Text('Email', style: TextStyle(color: cs.onSurfaceVariant)),
+                    Text('이메일', style: TextStyle(color: cs.onSurfaceVariant)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _emailCtrl,
@@ -126,7 +129,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
                     // 비밀번호
                     Text(
-                      'Password (8자 이상)',
+                      '비밀번호 (8자 이상)',
                       style: TextStyle(color: cs.onSurfaceVariant),
                     ),
                     const SizedBox(height: 8),
@@ -152,11 +155,38 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     const SizedBox(height: 14),
 
-                    // 전화번호
+                    // 비밀번호 확인
                     Text(
-                      'Phone Number',
+                      '비밀번호 확인',
                       style: TextStyle(color: cs.onSurfaceVariant),
                     ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _pwConfirmCtrl,
+                      obscureText: _obscureConfirm,
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        hintText: '비밀번호를 다시 입력해 주세요',
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(
+                            () => _obscureConfirm = !_obscureConfirm,
+                          ),
+                          icon: Icon(
+                            _obscureConfirm
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                        ),
+                      ),
+                      validator: (v) {
+                        final s = v ?? '';
+                        if (s.isEmpty) return '비밀번호 확인을 입력해 주세요';
+                        if (s != _pwCtrl.text) return '비밀번호가 일치하지 않습니다';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    Text('전화번호', style: TextStyle(color: cs.onSurfaceVariant)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _phoneCtrl,
@@ -184,7 +214,7 @@ class _SignUpPageState extends State<SignUpPage> {
                               height: 22,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Sign Up'),
+                          : const Text('회원가입'),
                     ),
                     const SizedBox(height: 12),
 
