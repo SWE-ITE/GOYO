@@ -17,7 +17,7 @@ This research demonstrates how a home-wide IoT sensing network with edge AI proc
 ---
 
 ## System Architecture
-![GOYO System Architecture](./Documents/GOYO_System_Architecture.png)
+![GOYO System Architecture](./Documents/System_Architecture.png)
 
 ---
 
