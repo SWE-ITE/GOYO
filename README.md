@@ -1,8 +1,8 @@
 # GOYO  
 ### An AI-Based Active Noise Control System for Smart Home Environments
-PDF: [GOYO System Documentation](./documents/GOYO.pdf)
+PDF: [GOYO System Documentation](./Documents/GOYO.pdf)
 
-Latex: [GOYO System Documentation](./documents/GOYO.tex)
+LaTeX: [GOYO System Documentation](./Documents/GOYO.tex)
 
 ---
 
@@ -17,7 +17,7 @@ This research demonstrates how a home-wide IoT sensing network with edge AI proc
 ---
 
 ## System Architecture
-![GOYO System Architecture](./documents/GOYO_System_Architecture.png)
+![GOYO System Architecture](./Documents/GOYO_System_Architecture.png)
 
 ---
 
