@@ -4,6 +4,7 @@ import 'package:goyo_app/core/config/env.dart';
 import 'package:goyo_app/core/auth/token_manager.dart';
 import 'package:goyo_app/features/auth/auth_provider.dart';
 import 'package:goyo_app/data/models/device_models.dart';
+import 'package:goyo_app/data/models/noise_appliance.dart';
 
 class ApiService {
   ApiService({Dio? dio})
@@ -252,6 +253,26 @@ extension DeviceManagementApi on ApiService {
     } on DioException catch (e) {
       final msg = e.response?.data ?? e.message;
       throw Exception('캘리브레이션을 실패했습니다: $msg');
+    }
+  }
+}
+
+extension ApplianceManagementApi on ApiService {
+  Future<List<NoiseAppliance>> getNoisyAppliances() async {
+    try {
+      final res = await _dio.get('/api/appliances/active');
+      final data = res.data;
+      if (data is List) {
+        return data
+            .whereType<Map<String, dynamic>>()
+            .map(NoiseAppliance.fromJson)
+            .toList();
+      }
+      throw const FormatException('Invalid noisy appliance payload');
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      final msg = _pretty(e.response?.data) ?? e.message;
+      throw Exception('소음 감지 기기 목록을 불러오지 못했습니다 ($code): $msg');
     }
   }
 }
