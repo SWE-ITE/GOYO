@@ -4,6 +4,8 @@ PDF: [GOYO System Documentation](./Documents/GOYO.pdf)
 
 LaTeX: [GOYO System Documentation](./Documents/GOYO.tex)
 
+https://www.overleaf.com/project/68e73724816bcff0466a2dff
+
 ---
 
 ## Proposal
