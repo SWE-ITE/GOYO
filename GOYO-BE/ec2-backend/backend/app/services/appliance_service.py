@@ -20,7 +20,7 @@ class ApplianceService:
         db.add(new_appliance)
         db.commit()
         db.refresh(new_appliance)
-        logger.info(f"✅ Appliance {new_appliance.appliance_name} created for user {user_id}")
+        logger.info(f"Appliance {new_appliance.appliance_name} created for user {user_id}")
 
         return new_appliance
 
@@ -48,7 +48,7 @@ class ApplianceService:
         if not appliance:
             raise ValueError("Appliance not found")
 
-        # 업데이트할 필드만 적용
+        
         if update_data.appliance_name is not None:
             appliance.appliance_name = update_data.appliance_name
         if update_data.is_noise_active is not None:
@@ -56,7 +56,7 @@ class ApplianceService:
 
         db.commit()
         db.refresh(appliance)
-        logger.info(f"✅ Appliance {appliance_id} updated")
+        logger.info(f"Appliance {appliance_id} updated")
 
         return appliance
 
@@ -73,7 +73,7 @@ class ApplianceService:
 
         db.delete(appliance)
         db.commit()
-        logger.info(f"✅ Appliance {appliance_id} deleted")
+        logger.info(f"Appliance {appliance_id} deleted")
 
     @staticmethod
     def update_noise_status(db: Session, user_id: int, is_noise_active: bool) -> List[Appliance]:
@@ -86,11 +86,11 @@ class ApplianceService:
         if not appliances:
             raise ValueError(f"No appliances found for user {user_id}")
 
-        # 모든 가전의 소음 상태 업데이트
+        
         for appliance in appliances:
             appliance.is_noise_active = is_noise_active
 
         db.commit()
-        logger.info(f"✅ Updated noise status for user {user_id}: is_noise_active={is_noise_active}")
+        logger.info(f"Updated noise status for user {user_id}: is_noise_active={is_noise_active}")
 
         return appliances

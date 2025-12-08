@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def signup(user_data: UserCreate, db: Session = Depends(get_db)):
-    # Check if user exists
+    
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
         raise HTTPException(
@@ -24,7 +24,7 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
     
-    # Validate password (at least 8 chars, mix of letters, numbers, special chars)
+    
     password = user_data.password
     if len(password) < 8:
         raise HTTPException(
@@ -32,12 +32,12 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
             detail="Password must be at least 8 characters"
         )
     
-    # Create user (auto-verified for development)
+    
     new_user = User(
         email=user_data.email,
         hashed_password=get_password_hash(password),
         name=user_data.name,
-        is_verified=True,  # 개발 편의를 위해 자동 인증
+        is_verified=True,  
         is_active=True
     )
 
@@ -45,7 +45,7 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    # Create default appliances for the new user
+    
     default_appliances = ["선풍기", "청소기", "냉장고", "공기청정기"]
     for appliance_name in default_appliances:
         appliance = Appliance(
@@ -61,7 +61,7 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
-    # Find user
+    
     user = db.query(User).filter(User.email == user_data.email).first()
     if not user or not verify_password(user_data.password, user.hashed_password):
         raise HTTPException(
@@ -75,7 +75,7 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
             detail="Email not verified. Please check your inbox."
         )
     
-    # Create tokens
+    
     access_token = create_access_token(data={"sub": user.email})
     refresh_token = create_refresh_token(data={"sub": user.email})
     

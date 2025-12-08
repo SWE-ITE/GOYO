@@ -17,7 +17,7 @@ class DeviceService:
         - DB에 디바이스 등록
         - 앱이 이미 Raspberry Pi에 MQTT 설정을 전달한 상태
         '''
-        # 기존 디바이스 확인
+        
         existing = db.query(Device).filter(
             Device.device_id == device_data["device_id"]
         ).first()
@@ -25,15 +25,15 @@ class DeviceService:
         if existing:
             if existing.user_id != user_id:
                 raise ValueError("Device already paired with another user")
-            # 이미 페어링된 디바이스면 재연결
+            
             existing.is_connected = True
             existing.ip_address = device_data.get("ip_address")
             db.commit()
             db.refresh(existing)
-            logger.info(f"✅ Device {existing.device_id} re-paired")
+            logger.info(f"Device {existing.device_id} re-paired")
             return existing
 
-        # 새 디바이스 생성
+        
         new_device = Device(
             user_id=user_id,
             device_id=device_data["device_id"],
@@ -41,13 +41,13 @@ class DeviceService:
             device_type=device_data.get("device_type", "goyo_device"),
             connection_type=device_data.get("connection_type", "wifi"),
             ip_address=device_data.get("ip_address"),
-            is_connected=False  # MQTT 연결 확인 후 True로 변경
+            is_connected=False
         )
 
         db.add(new_device)
         db.commit()
         db.refresh(new_device)
-        logger.info(f"✅ Device {new_device.device_id} paired successfully")
+        logger.info(f"Device {new_device.device_id} paired successfully")
 
         return new_device
 
@@ -58,7 +58,7 @@ class DeviceService:
 
     @staticmethod
     def get_device_setup(db: Session, user_id: int) -> dict:
-        '''디바이스 구성 상태 조회 (GOYO 디바이스)'''
+        '''디바이스 구성 상태 조회'''
         devices = db.query(Device).filter(Device.user_id == user_id).all()
 
         goyo_device = next((d for d in devices if d.device_type == "goyo_device"), None)
@@ -107,17 +107,17 @@ class DeviceService:
 
     @staticmethod
     def calibrate_device(db: Session, device_id: str) -> dict:
-        '''GOYO 디바이스 캘리브레이션 (Reference-Error 마이크)'''
+        '''GOYO 디바이스 캘리브레이션'''
         device = db.query(Device).filter(Device.device_id == device_id).first()
 
         if not device:
             raise ValueError("Device not found")
 
-        # 캘리브레이션 데이터 (실제로는 상호상관 분석 필요)
+        
         calibration_data = {
-            "time_delay": 0.025,  # 25ms delay (예시)
-            "frequency_response": [0.9, 0.95, 1.0, 0.98],  # 주파수별 응답
-            "spatial_transfer_function": [0.8, 0.85, 0.9],  # 공간 전달 함수
+            "time_delay": 0.025,  
+            "frequency_response": [0.9, 0.95, 1.0, 0.98],  
+            "spatial_transfer_function": [0.8, 0.85, 0.9],  
             "calibrated_at": datetime.utcnow().isoformat()
         }
 
@@ -135,7 +135,7 @@ class DeviceService:
         if device:
             device.is_connected = is_connected
             db.commit()
-            logger.info(f"✅ Device {device_id} connection status: {is_connected}")
+            logger.info(f"Device {device_id} connection status: {is_connected}")
 
     @staticmethod
     def remove_device(db: Session, device_id: str):

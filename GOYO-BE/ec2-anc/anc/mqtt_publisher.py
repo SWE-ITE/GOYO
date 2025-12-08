@@ -18,25 +18,24 @@ class MQTTPublisher:
     def __init__(self):
         self.client: Optional[mqtt.Client] = None
         self.is_connected = False
-        # Sequence numbers for binary streaming (per user)
-        self.sequence_numbers = {}  # {user_id: sequence}
+        
+        self.sequence_numbers = {}  
 
     def on_connect(self, client, userdata, flags, rc):
         """MQTT 브로커 연결 시 호출"""
         if rc == 0:
-            logger.info("✅ ANC Server connected to MQTT Broker")
+            logger.info(" ANC Server connected to MQTT Broker")
             self.is_connected = True
 
-            # 제어 명령 구독 (필요 시)
-            client.subscribe("mqtt/control/anc/#", qos=1)
-            logger.info("📡 Subscribed to mqtt/control/anc/#")
+            client.subscribe("mqtt/control/anc/")
+            logger.info(" Subscribed to mqtt/control/anc/")
         else:
-            logger.error(f"❌ Failed to connect to MQTT Broker, return code {rc}")
+            logger.error(f" Failed to connect to MQTT Broker, return code {rc}")
             self.is_connected = False
 
     def on_disconnect(self, client, userdata, rc):
         """MQTT 브로커 연결 해제 시 호출"""
-        logger.warning(f"⚠️ ANC Server disconnected from MQTT Broker (rc: {rc})")
+        logger.warning(f" ANC Server disconnected from MQTT Broker (rc: {rc})")
         self.is_connected = False
 
         if rc != 0:
@@ -47,12 +46,12 @@ class MQTTPublisher:
                 logger.error(f"Reconnection failed: {e}")
 
     def on_message(self, client, userdata, msg):
-        """제어 명령 수신 (필요 시)"""
+        """제어 명령 수신"""
         try:
             topic = msg.topic
             payload = json.loads(msg.payload.decode('utf-8'))
-            logger.info(f"🎛️ Control message received: {topic} - {payload}")
-            # TODO: 제어 로직 추가
+            logger.info(f" Control message received: {topic} - {payload}")
+            
         except Exception as e:
             logger.error(f"Error processing control message: {e}")
 
@@ -60,20 +59,17 @@ class MQTTPublisher:
         """MQTT 브로커에 연결"""
         try:
             self.client = mqtt.Client(client_id="goyo-anc-server", clean_session=False)
-
-            # 인증 설정
+     
             if settings.MQTT_USERNAME and settings.MQTT_PASSWORD:
                 self.client.username_pw_set(
                     settings.MQTT_USERNAME,
                     settings.MQTT_PASSWORD
                 )
 
-            # 콜백 등록
             self.client.on_connect = self.on_connect
             self.client.on_disconnect = self.on_disconnect
             self.client.on_message = self.on_message
-
-            # Will 메시지 설정
+            
             self.client.will_set(
                 "mqtt/status/anc-server",
                 json.dumps({"status": "offline"}),
@@ -81,7 +77,6 @@ class MQTTPublisher:
                 retain=True
             )
 
-            # 연결
             logger.info(
                 f"Connecting to MQTT Broker at {settings.MQTT_BROKER_HOST}:{settings.MQTT_BROKER_PORT}"
             )
@@ -91,24 +86,22 @@ class MQTTPublisher:
                 keepalive=60
             )
 
-            # 백그라운드 루프 시작
             self.client.loop_start()
 
-            # 연결 대기 (최대 5초)
             wait_count = 0
             while not self.is_connected and wait_count < 50:
                 time.sleep(0.1)
                 wait_count += 1
 
             if self.is_connected:
-                logger.info("🚀 MQTT Publisher started")
-                # 온라인 상태 발행
+                logger.info(" MQTT Publisher started")
+                
                 self.publish_status("online")
             else:
-                logger.error("❌ MQTT connection timeout")
+                logger.error(" MQTT connection timeout")
 
         except Exception as e:
-            logger.error(f"❌ Failed to connect to MQTT Broker: {e}", exc_info=True)
+            logger.error(f" Failed to connect to MQTT Broker: {e}", exc_info=True)
             raise
 
     def disconnect(self):
@@ -117,7 +110,7 @@ class MQTTPublisher:
             self.publish_status("offline")
             self.client.loop_stop()
             self.client.disconnect()
-            logger.info("🛑 MQTT Publisher stopped")
+            logger.info(" MQTT Publisher stopped")
 
     def publish_anti_noise(
         self,
@@ -137,45 +130,40 @@ class MQTTPublisher:
             성공 여부
         """
         if not self.is_connected:
-            logger.warning("⚠️ MQTT not connected, cannot publish anti-noise")
+            logger.warning(" MQTT not connected, cannot publish anti-noise")
             return False
 
         try:
-            # Float32 → Int16 변환 (PCM16)
             anti_noise_int16 = (anti_noise_data * 32767).astype(np.int16)
 
-            # Sequence number 가져오기/초기화
             if user_id not in self.sequence_numbers:
                 self.sequence_numbers[user_id] = 0
 
             seq = self.sequence_numbers[user_id]
 
-            # Binary Payload: [4 bytes: sequence] + [PCM16 audio]
             payload = struct.pack('<I', seq) + anti_noise_int16.tobytes()
 
-            # MQTT 발행
             topic = f"mqtt/speaker/output/{user_id}/stream"
             result = self.client.publish(
                 topic,
                 payload,
-                qos=0  # Best effort for streaming
+                qos=0  
             )
 
             if result.rc == mqtt.MQTT_ERR_SUCCESS:
                 logger.debug(
-                    f"📤 Published anti-noise to {topic} "
+                    f" Published anti-noise to {topic} "
                     f"(seq={seq}, {len(anti_noise_data)} samples, {latency_ms:.1f}ms latency)"
                 )
 
-                # Sequence number 증가 (uint32 wraparound)
                 self.sequence_numbers[user_id] = (seq + 1) % 4294967296
                 return True
             else:
-                logger.error(f"❌ Failed to publish anti-noise: rc={result.rc}")
+                logger.error(f" Failed to publish anti-noise: rc={result.rc}")
                 return False
 
         except Exception as e:
-            logger.error(f"❌ Error publishing anti-noise: {e}", exc_info=True)
+            logger.error(f" Error publishing anti-noise: {e}", exc_info=True)
             return False
 
     def publish_status(self, status: str, additional_data: dict = None):
@@ -198,7 +186,7 @@ class MQTTPublisher:
                 qos=1,
                 retain=True
             )
-            logger.debug(f"📊 Published status: {status}")
+            logger.debug(f" Published status: {status}")
         except Exception as e:
             logger.error(f"Error publishing status: {e}")
 
@@ -234,15 +222,14 @@ class MQTTPublisher:
             self.client.publish(
                 topic,
                 json.dumps(payload),
-                qos=0  # Best effort (모니터링 데이터는 손실 허용)
+                qos=0  
             )
             logger.debug(
-                f"📊 Published ANC result: "
+                f" Published ANC result: "
                 f"noise={noise_level_db:.1f}dB, reduction={reduction_db:.1f}dB"
             )
         except Exception as e:
             logger.error(f"Error publishing ANC result: {e}")
 
 
-# 싱글톤 인스턴스
 mqtt_publisher = MQTTPublisher()
