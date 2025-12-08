@@ -4,7 +4,7 @@ from typing import Optional, List, Dict
 
 class DeviceBase(BaseModel):
     device_name: str
-    device_type: str = "goyo_device"  # GOYO ANC Device (Reference + Error 마이크 + 스피커)
+    device_type: str = "goyo_device"  
     connection_type: str = "wifi"
 
 class DeviceDiscover(BaseModel):
@@ -29,7 +29,7 @@ class DevicePair(BaseModel):
 
 class DeviceCalibrate(BaseModel):
     device_id: str
-    calibration_type: str = "dual_mic"  # Reference-Error 마이크 캘리브레이션
+    calibration_type: str = "dual_mic"
 
 class DeviceResponse(BaseModel):
     id: int

@@ -28,13 +28,13 @@ echo ""
 echo "Step 4: Creating .env file..."
 if [ ! -f .env ]; then
     cp .env.example .env
-    echo "⚠️  .env file created from .env.example"
-    echo "⚠️  Please edit .env and update:"
+    echo " .env file created from .env.example"
+    echo " Please edit .env and update:"
     echo "     - MQTT_BROKER_HOST (EC2 #1 Public IP)"
     echo "     - USER_ID (Backend 사용자 ID)"
     echo "     - SOURCE_MIC_INDEX, REFERENCE_MIC_INDEX"
 else
-    echo "✅ .env file already exists"
+    echo " .env file already exists"
 fi
 
 # 5. 오디오 디바이스 확인

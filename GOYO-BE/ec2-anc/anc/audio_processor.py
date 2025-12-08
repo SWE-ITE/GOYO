@@ -54,20 +54,20 @@ class AudioProcessor:
     """오디오 처리 및 동기화"""
 
     def __init__(self):
-        # 사용자별 버퍼 관리
+        
         self.reference_buffers: Dict[str, AudioBuffer] = {}
         self.error_buffers: Dict[str, AudioBuffer] = {}
 
-        # 활성 세션
+        
         self.active_sessions = set()
 
-        # 초기화 상태
+        
         self._initialized = False
 
     def initialize(self):
         """Audio Processor 초기화"""
         self._initialized = True
-        logger.info("✅ Audio Processor initialized")
+        logger.info("Audio Processor initialized")
 
     def cleanup(self):
         """정리"""
@@ -92,32 +92,32 @@ class AudioProcessor:
     def process_reference(self, user_id: str, audio_data: bytes, timestamp: float):
         """Reference 마이크 데이터 처리 (Binary Payload)"""
         try:
-            # Binary bytes → NumPy 배열로 변환
+            
             audio_array = np.frombuffer(audio_data, dtype=np.int16)
 
-            # 버퍼에 추가
+            
             reference_buffer, _ = self._get_or_create_buffers(user_id)
             reference_buffer.add(audio_array, timestamp)
 
-            logger.debug(f"✅ Reference audio processed: {len(audio_array)} samples")
+            logger.debug(f"Reference audio processed: {len(audio_array)} samples")
 
         except Exception as e:
-            logger.error(f"❌ Reference processing error: {e}")
+            logger.error(f"Reference processing error: {e}")
 
     def process_error(self, user_id: str, audio_data: bytes, timestamp: float):
         """Error 마이크 데이터 처리 (Binary Payload)"""
         try:
-            # Binary bytes → NumPy 배열로 변환
+            
             audio_array = np.frombuffer(audio_data, dtype=np.int16)
 
-            # 버퍼에 추가
+            
             _, error_buffer = self._get_or_create_buffers(user_id)
             error_buffer.add(audio_array, timestamp)
 
-            logger.debug(f"✅ Error audio processed: {len(audio_array)} samples")
+            logger.debug(f"Error audio processed: {len(audio_array)} samples")
 
         except Exception as e:
-            logger.error(f"❌ Error processing error: {e}")
+            logger.error(f"Error processing error: {e}")
 
     def is_ready(self, user_id: str) -> bool:
         """두 마이크 데이터가 모두 준비되었는지 확인"""
@@ -127,7 +127,7 @@ class AudioProcessor:
         reference_buffer = self.reference_buffers[user_id]
         error_buffer = self.error_buffers[user_id]
 
-        # 둘 다 최소 1개 이상의 데이터가 있어야 함
+        
         return not reference_buffer.is_empty() and not error_buffer.is_empty()
 
     def get_reference_buffer(self, user_id: str) -> Optional[np.ndarray]:
@@ -145,17 +145,17 @@ class AudioProcessor:
     def calculate_noise_level(self, audio_data: np.ndarray) -> float:
         """노이즈 레벨 계산 (dB SPL)"""
         try:
-            # RMS 계산
+            
             rms = np.sqrt(np.mean(audio_data.astype(np.float32) ** 2))
 
-            # dB SPL 변환 (참조: 16-bit max)
+            
             if rms > 0:
-                db = 20 * np.log10(rms / 32768.0) + 94  # 94 dB SPL reference
+                db = 20 * np.log10(rms / 32768.0) + 94  
                 return float(db)
             return 0.0
 
         except Exception as e:
-            logger.error(f"❌ Noise level calculation error: {e}")
+            logger.error(f"Noise level calculation error: {e}")
             return 0.0
 
     def get_timestamp(self) -> float:

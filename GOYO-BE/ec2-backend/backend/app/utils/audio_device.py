@@ -14,12 +14,12 @@ class AudioDeviceManager:
         devices = []
         for i in range(self.p.get_device_count()):
             info = self.p.get_device_info_by_index(i)
-            # 입력 채널이 있고, USB 디바이스인 경우
+            
             if info['maxInputChannels'] > 0:
                 devices.append({
                     'device_id': f"USB_MIC_{i}",
                     'device_name': info['name'],
-                    'device_type': 'microphone_unknown',  # 나중에 사용자가 지정
+                    'device_type': 'microphone_unknown',  
                     'connection_type': 'usb',
                     'index': i,
                     'channels': info['maxInputChannels'],
@@ -48,7 +48,7 @@ class AudioDeviceManager:
     def calculate_audio_level(self, audio_data: np.ndarray) -> float:
         '''오디오 레벨 계산 (RMS)'''
         rms = np.sqrt(np.mean(audio_data**2))
-        db = 20 * np.log10(rms + 1e-6)  # dB로 변환
+        db = 20 * np.log10(rms + 1e-6)  
         return float(db)
     
     def close(self):

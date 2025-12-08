@@ -15,7 +15,7 @@ docker run -it --rm -v $(pwd)/mosquitto/config:/config eclipse-mosquitto:2.0 mos
 docker run -it --rm -v $(pwd)/mosquitto/config:/config eclipse-mosquitto:2.0 mosquitto_passwd -b /config/passwd raspberry_pi raspi_mqtt_pass_2025
 docker run -it --rm -v $(pwd)/mosquitto/config:/config eclipse-mosquitto:2.0 mosquitto_passwd -b /config/passwd ai_server ai_mqtt_pass_2025
 
-echo "✅ MQTT users created:"
+echo " MQTT users created:"
 echo "   - goyo_backend / backend_mqtt_pass_2025"
 echo "   - raspberry_pi / raspi_mqtt_pass_2025"
 echo "   - ai_server / ai_mqtt_pass_2025"
@@ -25,10 +25,10 @@ echo ""
 echo "Step 2: Creating .env file..."
 if [ ! -f .env ]; then
     cp .env.example .env
-    echo "⚠️  .env file created from .env.example"
-    echo "⚠️  Please edit .env and update AI_SERVER_HOST with EC2 #2 Private IP"
+    echo " .env file created from .env.example"
+    echo " Please edit .env and update AI_SERVER_HOST with EC2 #2 Private IP"
 else
-    echo "✅ .env file already exists"
+    echo " .env file already exists"
 fi
 
 # 3. 디렉토리 권한 설정
@@ -40,7 +40,7 @@ sudo chown -R 1883:1883 mosquitto/data mosquitto/log 2>/dev/null || true
 # 4. Docker 네트워크 확인
 echo ""
 echo "Step 4: Checking Docker network..."
-docker network create goyo_network 2>/dev/null || echo "✅ Network already exists"
+docker network create goyo_network 2>/dev/null || echo " Network already exists"
 
 echo ""
 echo "========================================="

@@ -9,12 +9,12 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     name = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)  # 개발 편의를 위해 자동 활성화
-    is_verified = Column(Boolean, default=True)  # 개발 편의를 위해 자동 인증
+    is_active = Column(Boolean, default=True)  
+    is_verified = Column(Boolean, default=True)  
     verification_token = Column(String, nullable=True)
     
-    # ANC Settings
-    anc_enabled = Column(Boolean, default=False)  # ANC ON/OFF
+    
+    anc_enabled = Column(Boolean, default=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

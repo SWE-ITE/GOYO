@@ -1,33 +1,15 @@
 # GOYO AI Server Dependencies
 
-# Web Framework
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-websockets==12.0
 
-# Audio Processing
 numpy==1.24.3
 scipy==1.11.3
 
-# MQTT (Phase 6)
 paho-mqtt==1.6.1
 
-# Configuration
 pydantic==2.5.0
 pydantic-settings==2.1.0
 python-dotenv==1.0.0
 
-# Utilities
 python-multipart==0.0.6
-
-# Phase 5에서 추가 예정:
-# PyTorch (AI Model)
-# torch==2.1.0
-# torchaudio==2.1.0
-
-# Audio Analysis
-# librosa==0.10.1
-# soundfile==0.12.1
-
-# Signal Processing
-# scipy==1.11.3
