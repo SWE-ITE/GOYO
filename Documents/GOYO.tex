@@ -14,6 +14,7 @@
 \usepackage{kotex}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{url}
 
 
 \begin{document}
@@ -183,6 +184,9 @@ Incoming audio from connected microphones is processed with minimal latency to i
     macOS integrates smoothly with Apple services like iCloud and TestFlight for deployment, while maintaining security through features like Gatekeeper. 
     Its UNIX certification and virtual machine support enable versatility across different development scenarios.
 
+    \item \textbf{Raspberry Pi OS} \\
+    Raspberry Pi OS is a lightweight Linux-based operating system optimized for the Raspberry Pi’s ARM architecture, providing a flexible environment for hardware-software integration and embedded development. Its Debian foundation offers powerful command-line tools and access to vast open-source packages, while GPIO libraries enable direct interaction with sensors, motors, and other peripherals. The platform supports programming languages like Python and C/C++, making it ideal for IoT, robotics, and educational projects. Raspberry Pi OS includes built-in tools for remote access, system configuration, and network setup, and its low-cost hardware ecosystem encourages rapid prototyping and experimentation across a wide range of development scenarios.
+
     \item \textbf{AWS EC2} \\
     AWS EC2 (Elastic Compute Cloud) is a scalable virtual computing platform that provides resizable compute capacity in the cloud. It allows developers to deploy and run applications on customizable virtual machines with full control over the operating system, networking, and storage configurations. EC2 supports a wide range of instance types optimized for compute, memory, or storage-intensive workloads, enabling flexible resource allocation based on application requirements. It offers features such as auto-scaling, load balancing, security groups, and VPC integration, making it suitable for building reliable and secure cloud-based systems. With its pay-as-you-go pricing model and high availability across multiple regions and availability zones, EC2 serves as an ideal platform for hosting backend services, microservices, distributed applications, and development environments in modern cloud architectures.
 \end{enumerate}
@@ -200,6 +204,9 @@ Incoming audio from connected microphones is processed with minimal latency to i
 
     \item \textbf{FastAPI} \\
     FastAPI is a modern, high-performance web framework for building APIs with Python, designed to enable fast development and high efficiency. It leverages Python’s type hints to provide automatic data validation, serialization, and comprehensive API documentation through OpenAPI and Swagger. FastAPI supports asynchronous programming using Python’s async and await syntax, allowing for scalable and non-blocking request handling. Its simplicity, combined with robust performance comparable to Node.js and Go, accelerates backend development while maintaining reliability. Furthermore, FastAPI integrates seamlessly with popular Python libraries, database ORMs, and authentication systems, offering flexibility and extensive community support to quickly resolve development challenges.
+
+    \item \textbf{Flask} \\
+    Flask is a lightweight and flexible Python web framework designed for building web applications and APIs with minimal overhead. It follows a micro-framework philosophy, providing only the core essentials such as routing, request handling, and template rendering, while allowing developers to extend functionality through a wide ecosystem of third-party extensions. Flask’s simplicity and unopinionated structure make it easy to learn and highly customizable, enabling developers to design architectures tailored to their specific use cases. Despite its minimal core, Flask supports integration with ORMs, authentication modules, and modern tooling, making it suitable for projects ranging from small prototypes to production-grade services. Its strong community, clear documentation, and flexible design continue to make Flask a popular choice for Python-based backend development.
 \end{enumerate}
 
 \subsubsection*{Cost estimation}
@@ -208,8 +215,10 @@ Incoming audio from connected microphones is processed with minimal latency to i
 \hline
 \textbf{Item} & \textbf{Price} \\ \hline
 Laptop        & \$1,199        \\ \hline
+Raspberry Pi  & \$100           \\ \hline
 Speaker       & \$9            \\ \hline
-EC2 Instances       & \$30 (per month)            \\ \hline
+Microphone    & \$9             \\ \hline
+EC2 Instances (t3.small x2)       & \$30 (per month)            \\ \hline
 \end{tabular}
 \end{center}
 
@@ -252,9 +261,6 @@ EC2 Instances       & \$30 (per month)            \\ \hline
     \item \textbf{PostgreSQL} \\
     PostgreSQL is a widely used open-source relational database management system renowned for standards compliance and extensibility. It delivers robust data management with advanced SQL, full ACID transactions, and stored procedures/functions. PostgreSQL supports built-in replication and high availability options, along with strong security features such as SSL/TLS encryption, role-based access control, and row-level security. Its rich indexing, cost-based optimizer, and effective caching enable high-performance workloads at scale. Native JSONB, arrays, and user-defined types/extensions make PostgreSQL a versatile choice for applications requiring reliable, persistent, and flexible data storage.
 
-    \item \textbf{Redis} \\
-    Redis is an open-source, in-memory data structure store, commonly used as a database, cache, and message broker. It supports various data types such as strings, hashes, lists, sets, and sorted sets, providing high-performance read and write operations. Redis offers features like persistence, replication, pub/sub messaging, and Lua scripting, making it highly versatile for real-time applications. Its low-latency and scalable architecture make it an ideal choice for caching frequently accessed data, session management, and handling high-throughput workloads in modern web and mobile applications.
-
     \item \textbf{Docker} \\
     Docker is an open-source containerization platform that enables developers to package applications and their dependencies into lightweight, portable containers. These containers provide a consistent runtime environment across different machines, ensuring reliable deployment from development to production. Docker uses isolated filesystem and resource environments, allowing multiple services to run securely on the same host without conflicts. It supports features such as image versioning, layered file systems, container orchestration, and automated builds, making it highly efficient for developing microservices and distributed systems. Its portability, scalability, and reproducibility make Docker an ideal choice for modern application development, CI/CD pipelines, and managing complex multi-service architectures.
 
@@ -277,13 +283,19 @@ EC2 Instances       & \$30 (per month)            \\ \hline
 \begin{tabularx}{\columnwidth}{|l|l|X|}
 \hline
 \textbf{Roles} & \textbf{Name} & \textbf{Task description and etc.} \\ \hline
-\makecell[t]{Front-end\\ Developer} & Wongyu Lee & Responsible for implementing the user interface and user experience of applications. They work with technologies like HTML, CSS, JavaScript, and frameworks such as React or Flutter to create responsive, interactive, and visually appealing designs. Frontend developers ensure seamless integration with backend services and optimize performance for various devices. \\ \hline
+    \makecell[t]{Front-end\\ Developer} & Wongyu Lee & Responsible for implementing the user interface and user experience of applications. They work with technologies like HTML, CSS, JavaScript, and frameworks such as React or Flutter to create responsive, interactive, and visually appealing designs. Frontend developers ensure seamless integration with backend services and optimize performance for various devices. \\ \hline
+    
+    \makecell[t]{Back-end\\ Developer} & Junill Jang & Handles server-side logic, databases, and application infrastructure. They design and implement APIs, manage data storage, ensure security and scalability, and maintain server performance. Backend developers work with frameworks like FastAPI, Spring Boot, or Node.js to provide reliable and efficient services for frontend applications. \\ \hline
+\end{tabularx}
+\end{table}
 
-\makecell[t]{Back-end\\ Developer} & Junill Jang & Handles server-side logic, databases, and application infrastructure. They design and implement APIs, manage data storage, ensure security and scalability, and maintain server performance. Backend developers work with frameworks like FastAPI, Spring Boot, or Node.js to provide reliable and efficient services for frontend applications. \\ \hline
-
-\makecell[t]{AI Developer} & Taerim Kim & Develops and deploys artificial intelligence and machine learning models to solve specific problems or enhance application functionality. They preprocess data, train models, optimize algorithms, and integrate AI solutions into applications. AI engineers often work with frameworks like TensorFlow, PyTorch, or scikit-learn. \\ \hline
-
-\makecell[t]{Data Engineer} & Hoyoung Chung & Designs, builds, and maintains data pipelines and infrastructure for collecting, processing, and storing large volumes of data. They ensure data quality, accessibility, and scalability, supporting analytics and AI workflows. Data engineers work with databases, ETL tools, and cloud platforms to enable reliable data-driven decision-making. \\ \hline
+\begin{table}[H]
+\centering
+\begin{tabularx}{\columnwidth}{|l|l|X|}
+\hline
+    \makecell[t]{AI Developer} & Taerim Kim & Develops and deploys artificial intelligence and machine learning models to solve specific problems or enhance application functionality. They preprocess data, train models, optimize algorithms, and integrate AI solutions into applications. AI engineers often work with frameworks like TensorFlow, PyTorch, or scikit-learn. \\ \hline
+    
+    \makecell[t]{Data Engineer} & Hoyoung Chung & Designs, builds, and maintains data pipelines and infrastructure for collecting, processing, and storing large volumes of data. They ensure data quality, accessibility, and scalability, supporting analytics and AI workflows. Data engineers work with databases, ETL tools, and cloud platforms to enable reliable data-driven decision-making. \\ \hline
 \end{tabularx}
 \end{table}
 
@@ -295,9 +307,8 @@ EC2 Instances       & \$30 (per month)            \\ \hline
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.2\textwidth]{GOYOapp_SignUp.png}
-    \caption{sign-up}
-    \label{fig:example}
+    \includegraphics[width=0.2\textwidth]{images/SignUp.png}
+    \caption{Sign-up}
 \end{figure}
 
     \begin{table}[H]
@@ -308,7 +319,14 @@ EC2 Instances       & \$30 (per month)            \\ \hline
     01 & Signup-Page & GOYO requires four user information to sigh up for membership: E-mail, phone number, password, and name. \\ \hline
     02 & Signup-Email & The Email field serves as the unique identifier (primary key) for user login. The entered value must follow a valid email format (e.g., contain ‘@’ and domain). Upon submission, the system checks the PostgreSQL database for duplicate entries. If found, an error message such as “This email is already in use” is displayed. Invalid formats prompt “Please enter a valid email address.” \\ \hline
     03 & Signup-Password & The Password field requires at least 8 characters, combining two or more of the following: letters, numbers, and special symbols. During input, the password should be displayed on the screen in the format of asterisks ‘****’. \\ \hline
-      
+    \end{tabular}
+    \end{table}
+
+    \begin{table}[H]
+    \centering
+    \begin{tabular}{|p{0.3cm}|p{1.2cm}|p{6cm}|}
+    \hline
+    \textbf{ID} & \textbf{Name} & \textbf{Description} \\ \hline
     04 & Signup-Name & The Name field is a mandatory input representing the user’s real name. Upon successful registration, this value is stored in the users table under the name column and used as the user’s default nickname within the system. Input validation ensures that the field cannot be left empty. \\ \hline
     05 & Signup-PhoneNum & The mobile phone number is mandatory for user verification. In case user forget their login information, they can restore account access through mobile identity authentication. \\ \hline
     \end{tabular}
@@ -318,9 +336,8 @@ EC2 Instances       & \$30 (per month)            \\ \hline
 
     \begin{figure}[h]
         \centering
-        \includegraphics[width=0.2\textwidth]{GOYOOapp_Login.png}
+        \includegraphics[width=0.2\textwidth]{images/Login.png}
         \caption{Login}
-        \label{fig:example}
     \end{figure}
 
 
@@ -341,14 +358,14 @@ EC2 Instances       & \$30 (per month)            \\ \hline
     \centering
     \begin{subfigure}[t]{0.2\textwidth}
         \centering
-        \includegraphics[width=0.6\linewidth]{GOYOapp_Recovery_Id.png}
+        \includegraphics[width=0.6\linewidth]{images/Recovery.png}
         \caption{Recovery ID}
         \label{fig:recovery_id}
     \end{subfigure}
     \hfill
     \begin{subfigure}[t]{0.2\textwidth}
         \centering
-        \includegraphics[width=0.6\linewidth]{GOYOapp_Recovery_Pw.png}
+        \includegraphics[width=0.6\linewidth]{images/RecoveryPw.png}
         \caption{Recovery Password}
         \label{fig:recovery_pw}
     \end{subfigure}
@@ -364,14 +381,7 @@ EC2 Instances       & \$30 (per month)            \\ \hline
     \textbf{ID} & \textbf{Name} & \textbf{Description} \\ \hline
     09 & RecoverID-Page & The ID Recovery page allows users to retrieve their registered account ID by verifying their personal information. It includes two primary input fields (Name and Phone Number) and an action button (Send Verification Code). Once a valid user is found, an additional input field (Verification Code) appears for SMS verification. After successful verification, the user’s registered ID (email address) is displayed on the screen. If the information does not match any record, an error message “User information not found” is shown. \\ \hline
     10 & ResetPswd-Page & The Password Reset page allows users to verify their identity before resetting their account password. It includes two primary input fields (Email and Phone Number) and an action button (Send Verification Code). Once a valid user is identified, an additional input field (Verification Code) appears for SMS verification. After successful verification, the user is redirected to the password reset page to create a new password. If the provided information does not match any record, an error message “User information not found” is displayed.  \\ \hline
-    \end{tabular}
-    \end{table}
-
-    \begin{table}[H]
-    \centering
-    \begin{tabular}{|p{0.3cm}|p{1.2cm}|p{6cm}|}
-    \hline
-    \textbf{ID} & \textbf{Name} & \textbf{Description} \\ \hline
+    
     11 & ResetPswd-Reset & The Password Reset (New Password) page allows verified users to create a new account password. It includes two input fields (New Password and Confirm Password) to ensure accuracy. The password creation rules are identical to those on the Sign-Up page but additionally, users cannot reuse their previous password for security reasons. If the confirmation does not match or the new password violates the rules, an appropriate error message is displayed.  \\ \hline
     \end{tabular}
     \end{table}
@@ -381,13 +391,11 @@ EC2 Instances       & \$30 (per month)            \\ \hline
 \begin{enumerate}
     \item \textbf{Main Page}
     
-    
     \begin{figure}[h]
         \centering
-        \includegraphics[width=0.15\textwidth]{GOYOapp_Home_Normal.png}
+        \includegraphics[width=0.15\textwidth]{images/Home.png}
         \caption{Home}
-    \label{fig:example}
-\end{figure}
+    \end{figure}
     \begin{itemize}
         \item Active Noise Control \\ The Active Noise Control witch allows users to globally enable or disable AI-based real-time noise suppression. When toggled ON, the system activates the embedded model that classifies ambient sound from connected microphones and generates anti-phase signals to reduce low-frequency noise. When OFF, all suppression processes are paused to conserve resources. The switch’s label dynamically displays the current ANC status (“ON” / “OFF”).
 
@@ -409,14 +417,14 @@ EC2 Instances       & \$30 (per month)            \\ \hline
 
     \begin{figure}[h]
         \centering
-        \includegraphics[width=0.15\textwidth]{GOYOapp_DeviceManager.png}
+        \includegraphics[width=0.15\textwidth]{images/DeviceManager.png}
         \caption{DeviceManager}
-    \label{fig:example}
-\end{figure}
+    \end{figure}
     \begin{itemize}
         \item Device manager page \\ The Device Manager page provides an interface for registering, monitoring, and controlling all devices connected to the GOYO system. IoT devices are detected automatically via local Wi-Fi. Users can also pair devices manually by entering their unique device IDs. Real-time device status (Connected, Active, or Disconnected) is displayed for each entry.
 
-        \item Scan device \\ Scan Devices button initiates a discovery process for nearby microphones and speakers. Detected devices are listed with their current connection type (Wi-Fi) and measured latency. Users can select a device to establish a secure pairing connection. Once connected, latency and signal strength are monitored continuously.
+      \item Scan device \\
+        The Scan Devices button initiates a discovery process for nearby Smart Chairs using multicast DNS (mDNS) over Wi-Fi. Detected devices are listed with their connection information, and users can select a Smart Chair to establish a secure pairing connection. Once connected, the system continuously monitors the device’s availability and connection status to ensure reliable operation.
 
         \item Device info \\ Tapping a device item opens a detailed information panel showing device name, type connection protocol, and latency in milliseconds. From this view, users can perform actions such as testing audio input/output or checking signal stability.
 
@@ -429,10 +437,9 @@ EC2 Instances       & \$30 (per month)            \\ \hline
 
     \begin{figure}[h]
         \centering
-        \includegraphics[width=0.15\textwidth]{GOYOapp_profile.png}
+        \includegraphics[width=0.15\textwidth]{images/Profile.png}
         \caption{Profile}
-    \label{fig:example}
-\end{figure}
+    \end{figure}
 
     \begin{itemize}
         \item Profile page \\ The Profile Page allows users to view and modify personal information and configure their preferred sound environments. Each user’s ANC (Active Noise Control) settings and usage history are managed independently, providing a personalized listening experience optimized for two activity modes: \textit{Focus Mode} and \textit{Normal Mode}.
@@ -441,9 +448,8 @@ EC2 Instances       & \$30 (per month)            \\ \hline
 
         \begin{figure}[h]
             \centering
-            \includegraphics[width=0.15\textwidth]{GOYOapp_Home_Focus.png}
+            \includegraphics[width=0.15\textwidth]{images/FocusMode.png}
             \caption{FocusMode}
-            \label{fig:example}
         \end{figure}
 
        \item Sound mode \\
@@ -451,9 +457,8 @@ EC2 Instances       & \$30 (per month)            \\ \hline
 
        \begin{figure}[h]
             \centering
-            \includegraphics[width=0.15\textwidth]{GOYOapp_profile_NoiseMapLogs.png}
+            \includegraphics[width=0.15\textwidth]{images/NoiseLog.png}
             \caption{NoiseLog}
-            \label{fig:example}
         \end{figure}
 
         \item User stats \\ Usage \& Noise Stats section summarizes past noise analysis data, including detected noise patterns, suppression performance, and device usage duration. This information is stored in the usage\_logs table and can be displayed as visual graphs to help users understand how ANC settings performed over time.
@@ -465,11 +470,8 @@ EC2 Instances       & \$30 (per month)            \\ \hline
 \subsection{AI Features}
 
 \begin{enumerate}
-    \item \textbf{Real-time Audio Acquisition} \\
-    The system captures a real-time audio stream from the microphone using the sounddevice library. This stream is processed within an audio callback function to ensure continuous data handling with minimal latency. The acquired audio is automatically converted to the YAMNet model’s requirements: 16kHz sampling rate and Mono channel. The wav\_data (whether from Librosa or sounddevice) is cast to a float32 tensor (waveform) via tf.cast to be ready for model input.
-
-    \item \textbf{Core Model Construction (via Transfer Learning) } \\
-    The existing YAMNet model showed performance limitations as it is primarily trained on US-based sounds. To overcome this "Domain Mismatch," we constructed a fine-tuned model based on Transfer Learning.
+    \item \textbf{Core Model Construction} \\
+    The existing YAMNet model, while robust, is not optimized for the specific, granular distinctions required by our ANC control logic. We utilize Transfer Learning to strategically re-purpose its feature extraction capabilities, allowing us to tailor the model to our custom classification ontology. Specifically, we focuse the classification set on various household appliance noises, emphasizing the need to accurately identify and categorize localized acoustic events (e.g., distinguishing refrigerator hum from general ambient hum).
     \begin{itemize}
         \item \textbf{Feature Extractor: } The build\_finetuned\_model function defines a custom YAMNetLayer. This layer loads YAMNet's original TF function via hub.load() and sets trainable=False, freezing YAMNet's existing knowledge (millions of parameters) to reduce unnecessary training time.
         \item \textbf{Batch Processing: } The YAMNetLayer's call function uses tf.map\_fn to map the batch data (Batch Data) passed by Keras into 'single' data instances that the YAMNet function can process.
@@ -478,10 +480,32 @@ EC2 Instances       & \$30 (per month)            \\ \hline
     \end{itemize}
 
     \item \textbf{Dataset Construction and Model Training } \\
-    The existing YAMNet model showed performance limitations as it is primarily trained on US-based sounds. To overcome this "Domain Mismatch," we constructed a fine-tuned model based on Transfer Learning.
+    The training protocol is designed to mitigate inherent data quality issues and address severe class imbalance, maximizing the utility of the YAMNet feature extractor.
+    
+    \begin{itemize}
+        \item \textbf{Data Acquisition and Cleaning:}
+        The custom dataset is collected primarily from Freesound.org using the Freesound API. All files are strictly filtered to adhere to Creative Commons Zero (CC0) or Attribution (CC-BY) licensing requirements.
+        \begin{itemize}
+            \item \textit{Target Classes:} The dataset includes eight specific target appliance/event classes (e.g., Microwave, Refrigerator, Vacuum, Construction, etc.).
+            \item \textit{The Rejection Class (Others):} To prevent False Positives in the deployed system, the highly-imbalanced Others class was reduced via Under-sampling to diverse samples (e.g., speeching, water running). This cleaned class serves as the essential rejection boundary for non-target ambient noise.
+    \end{itemize}
+    
 
-    \item \textbf{Inference and Signal Hand-off } \\
-    The trained model is used to run inference on audio files (or real-time streams). This process involves preprocessing the data to the AUDIO\_LENGTH\_SAMPLES size, adding a batch dimension, and calling model(waveform). The model returns probabilities for our defined NOISE\_CLASSES. The argmax() function derives the infered\_class\_index, which is mapped to our custom class\_names list. If this class name corresponds to one of the 20 'NOISE' classes, a 'True signal' is generated and transmitted to activate the 'Noise Canceler' module. This signal acts as the interface between the two AI modules, completing the requirements for the 'Recognition and Classification' module.
+    \item \textbf{Imbalance Management and Robustness:}
+    A dual compensation strategy is applied to handle class imbalance between major and minor classes:
+    \begin{itemize}
+        \item \textit{Aggressive Augmentation:} Minority classes are oversampled through high–probability, strong augmentations such as Noise Injection, Pitch Shift, Time Masking, and Frequency Masking. This prevents Overfitting by increasing sample diversity.
+        \item \textit{Class Weighting:} A balanced weight matrix is computed using the original unique sample counts and applied to the CrossEntropyLoss. This increases the penalty for errors on under–represented classes, improving minority-class learning.
+    \end{itemize}
+
+    \item \textbf{Training Protocol:}
+    The model is trained using Adam over 100 epochs following a two-phase fine-tuning schedule:
+    \begin{itemize}
+        \item \textit{Phase 1 (Warm-up, Epochs 1–20):} Only the classifier head is trained while the YAMNet backbone remains frozen, using an initial learning rate of $1\times10^{-5}$.
+        \item \textit{Phase 2 (Fine-tuning, Epochs 21–100):} The YAMNet backbone is unfrozen, and the learning rate is substantially decreased (e.g., maintained at $1\times10^{-5}$). Importantly, YAMNet’s Batch Normalization layers are manually frozen using a TensorFlow control function to avoid Catastrophic Forgetting caused by updating BN statistics on the small dataset.
+    \end{itemize}
+\end{itemize}
+
 \end{enumerate}
 
 \subsection{ANC Features}
@@ -508,6 +532,877 @@ EC2 Instances       & \$30 (per month)            \\ \hline
     \item Core idea: First, measure how sound travels (secondary path), then create an opposite sound, and finally keep adjusting it based on the microphone feedback.
 \end{itemize}
 
+\section{Architecture Design \& Implementation}
+
+\subsection{Overall architecture}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/System_Architecture.png}
+    \caption{System architecture}
+\end{figure}
+
+GOYO users interact with the system through a mobile application to monitor and control an AI-based Active Noise Control system for smart home environments. The system addresses continuous low-frequency noise from household appliances like air conditioners and refrigerators that reduce user focus during studying or remote work. To achieve this, the system consists of 6 main modules: Frontend, Backend, ANC Server, AI Module, GOYO Device, and IoT Device.
+\par\vspace{0.3em}
+The first module is "Frontend," developed with Flutter and Dart. This module serves as the primary user interface for GOYO, providing a cross-platform mobile application for smart home noise control. The Frontend enables users to automatically discover and pair GOYO devices on the local network, visualize real-time ANC status and device states, manage user authentication and profile settings, and control per-appliance noise cancellation targeting. Through intuitive design, the module ensures seamless user experience across iOS and Android platforms while maintaining secure
+  communication with backend services.
+\par\vspace{0.3em}
+The second module is “Backend,” built with FastAPI and Python on an AWS EC2 t3.small instance, serving as the central orchestrator of GOYO’s functionality. This module manages all data flow between the mobile application, GOYO devices, and AI services while ensuring data consistency through a PostgreSQL-based storage system. It provides secure user authentication, handles device registration and pairing, and manages user profiles and appliance configurations. The Backend also coordinates communication between devices and the ANC Server by operating as the system’s MQTT broker and API gateway. It delivers necessary configuration data to devices, processes incoming device messages, and maintains centralized control over user-specific targeting options. With its RESTful architecture and structured service design, the Backend ensures stable, scalable, and secure operation of the entire GOYO system.
+\par\vspace{0.3em}
+The third module is “ANC Server,” built with FastAPI and Python on an AWS EC2 t3.small instance, serving as the core signal-processing engine for active noise cancellation. This module receives reference audio streams from IoT devices or the simulated GOYO Device and processes them in real time to generate anti-noise signals. In doing so, it accounts not only for phase-inversion but also for feedback microphone input, secondary-path characteristics, and other acoustic factors necessary for effective ANC. The server manages ANC activation based on targeted appliances and user preferences, synchronizes audio streams to maintain stable timing, and communicates with devices through MQTT. Through its low-latency processing pipeline, the ANC Server enables reliable and adaptive noise cancellation across different home environments.
+\par\vspace{0.3em}
+The fourth module is “AI Module,” the offline training and model development environment for GOYO’s edge AI capabilities. This module is responsible for building and training the appliance noise classification models that run directly on IoT Devices or on the simulated GOYO Device during development. Using large collections of household audio data, it trains deep learning models capable of identifying sounds from appliances such as refrigerators, air conditioners, washing machines, and vacuum cleaners. The AI Module handles data preparation, model training, and model optimization for edge deployment. Once trained, the models are converted into lightweight formats suitable for Raspberry Pi–based devices and packaged for deployment. These models enable real-time classification on the device itself, allowing GOYO to detect which appliance is generating noise. The classification results—such as appliance type and confidence—are then sent via MQTT, enabling intelligent and targeted noise cancellation throughout the system.
+\par\vspace{0.3em}
+The fifth module is “GOYO Device,” the physical ANC hardware placed near the user—typically mounted on a smart chair implemented using a Raspberry Pi. This device captures real-time audio through microphones, plays anti-noise signals through speakers, and serves as the endpoint where active noise cancellation is physically applied. The GOYO Device receives anti-noise audio from the ANC Server, outputs it through speakers, and simultaneously measures the remaining noise at the user’s position using an error microphone. It transmits these error signals back to the server, enabling continuous adaptive optimization of ANC performance. It supports automatic startup and stable operation through system-level service management, ensuring consistent and reliable ANC performance in everyday use.
+\par\vspace{0.3em}
+The sixth module is “IoT Device,” representing the smart home appliances in the GOYO ecosystem—such as air conditioners, refrigerators, or washing machines—that provide noise information to the system. In the envisioned architecture, each appliance is equipped with a reference microphone and an on-device AI model capable of identifying its own noise in real time. These devices send classified noise data and reference audio streams to the ANC Server, enabling accurate and appliance-specific noise cancellation. This distributed edge-AI setup allows appliances to process audio locally and transmit only essential information, reducing network usage and ensuring low-latency operation. In the current development environment, this IoT Device functionality is simulated using the Raspberry Pi–based GOYO Device, which emulates both sound capture and on-device noise classification to represent how a fully deployed smart home network would operate.
+\par\vspace{0.3em}
+To ensure system reliability and performance, we implemented standardized API endpoints with robust error handling, monitoring, and logging capabilities across all modules - the Frontend mobile application in Flutter, Backend API service in FastAPI, ANC Server signal processing in FastAPI, AI Module offline training pipeline, GOYO Device edge processing on Raspberry Pi, and IoT Device distributed sensing. This comprehensive approach ensures seamless communication and optimal performance throughout the entire system.
+
+\subsection{Directory Organization}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/folders.png}
+    \caption{Directory Organization}
+\end{figure}
+
+\begin{table}[H]
+    \centering
+    \caption{Directory Organization - Frontend}
+    \begin{tabular}{|p{2cm}|p{2.5cm}|p{2.5cm}|}
+    \hline
+    \textbf{Directory} & \textbf{File names} & \textbf{Used Modules} \\ \hline
+
+    GOYO-FE \newline /lib &
+  main.dart &
+  flutter \newline flutter-dotenv \newline provider \\ \hline
+
+  GOYO-FE \newline /lib/theme &
+  app\_theme.dart &
+  flutter \\ \hline
+
+  GOYO-FE \newline /lib/core/auth &
+  token\_manager.dart &
+  flutter\_secure\_storage \\ \hline
+
+  GOYO-FE \newline /lib/core/config &
+  env.dart &
+  flutter\_dotenv \\ \hline
+
+  GOYO-FE \newline /lib/features/auth &
+  auth\_provider.dart &
+  flutter/foundation \\ \hline
+
+  GOYO-FE \newline /lib/features/anc &
+  anc\_store.dart &
+  flutter/material \\ \hline
+
+  GOYO-FE \newline /lib/data/services &
+  api\_service.dart &
+  dio \\ \hline
+
+  GOYO-FE \newline /lib/data/services &
+  goyo\_device\_service \newline .dart &
+  http \newline multicast\_dns \\ \hline
+
+  GOYO-FE \newline /lib/data/models &
+  device\_models.dart &
+  \\ \hline
+
+  GOYO-FE \newline /lib/data/models &
+  noise\_appliance.dart &
+   \\ \hline
+
+  GOYO-FE \newline /lib/ui/home &
+  home\_page.dart &
+  flutter/material \\ \hline
+
+  GOYO-FE \newline /lib/ui/home \newline /widget &
+  bottomnavigationbar \newline .dart &
+  flutter/material \\ \hline
+
+  GOYO-FE \newline /lib/ui/home \newline /widget &
+  hometab.dart &
+  flutter/material \newline provider \\ \hline
+
+  GOYO-FE \newline /lib/ui/device &
+  devicemanager\_page \newline dart &
+  flutter/material \newline provider \\ \hline
+
+  GOYO-FE \newline /lib/ui/device \newline /widget &
+  deviceinfo.dart &
+  flutter/material \newline provider \\ \hline
+
+  GOYO-FE \newline /lib/ui/splash &
+  splash\_page.dart &
+  flutter/material \\ \hline
+
+  GOYO-FE \newline /lib/ui/login &
+  login\_page.dart &
+  flutter/material \newline provider \\ \hline
+  
+  GOYO-FE \newline /lib/ui/login &
+  signup\_page.dart &
+  flutter/material \newline provider \\ \hline
+
+  GOYO-FE \newline /lib/ui/login &
+  recovery\_page.dart &
+  flutter/material \\ \hline
+
+  GOYO-FE \newline /lib/ui/profile &
+  profile\_page.dart &
+  flutter/material \newline provider \\ \hline
+
+\end{tabular}
+\end{table}
+
+
+
+\begin{table}[H]
+    \centering
+    \caption{Directory Organization - Backend 1}
+    \begin{tabular}{|p{2cm}|p{2.5cm}|p{2.5cm}|}
+    \hline
+    \textbf{Directory} & \textbf{File names} & \textbf{Used Modules} \\ \hline
+    GOYO-BE \newline /ec2-anc  & Dockerfile \newline docker-compose.yml \newline setup.sh & docker \newline docker-compose \\ \hline
+    
+    GOYO-BE \newline /ec2-anc \newline /anc & Dockerfile \newline anc\_controller.py \newline audio\_processor.py \newline config.py \newline main.py \newline mqtt\_publisher.py \newline mqtt\_subscriber.py \newline requirements.txt & fastapi \newline pydantic-settings \newline paho-mqtt \newline numpy \\ \hline
+
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{Directory Organization - Backend 2}
+    \begin{tabular}{|p{2cm}|p{2.5cm}|p{2.5cm}|}
+    \hline
+    \textbf{Directory} & \textbf{File names} & \textbf{Used Modules} \\ \hline
+    GOYO-BE \newline /ec2-backend  & docker-compose.yml \newline setup.sh & docker \newline docker-compose \\ \hline
+
+    GOYO-BE \newline /ec2-backend \newline /backend & Dockerfile \newline requirements.txt &  \\ \hline
+
+    GOYO-BE \newline /ec2-backend \newline /backend \newline /app 
+    & \_\_init\_\_.py \newline config.py \newline database.py \newline main.py 
+    & fastapi \newline pydantic-settings \newline sqlalchemy \\ \hline
+
+    GOYO-BE \newline /ec2-backend \newline /backend \newline /app  \newline /api
+    & \_\_init\_\_.py \newline appliances.py \newline auth.py \newline devices.py  \newline home.py  \newline profile.py 
+    & fastapi \newline pydantic-settings \newline sqlalchemy \\ \hline
+
+    GOYO-BE \newline /ec2-backend \newline /backend \newline /app  \newline /models
+    & \_\_init\_\_.py \newline appliance.py \newline device.py \newline user.py
+    & sqlalchemy \\ \hline
+
+    GOYO-BE \newline /ec2-backend \newline /backend \newline /app  \newline /services
+    & \_\_init\_\_.py \newline appliance\_service.py \newline auth\_service.py \newline device\_service.py \newline matt\_service.py \newline profile\_service.py
+    & fastapi \newline sqlalchemy \newline  paho-mqtt \\ \hline
+
+    GOYO-BE \newline /ec2-backend \newline /backend \newline /app  \newline /utiles
+    & \_\_init\_\_.py \newline audio\_device.py \newline dependencies.py \newline email.py \newline security.py
+    & fastapi \newline python-jose \newline passlib \newline sqlalchemy \newline numpy \newline pyaudio \\ \hline
+
+    GOYO-BE \newline /ec2-backend \newline /mosquitto \newline /config 
+    & mosquitto.conf 
+    & \\ \hline
+
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{Directory Organization - Backend 3}
+    \begin{tabular}{|p{2cm}|p{2.5cm}|p{2.5cm}|}
+    \hline
+    \textbf{Directory} & \textbf{File names} & \textbf{Used Modules} \\ \hline
+    GOYO-BE \newline /raspberry-pi
+    & audio\_client.py \newline device\_server.py \newline goyo\_config.json \newline goyo-audio.service \newline goyo-device-server.service \newline mqtt\_test.py \newline README.md \newline requirements.txt \newline rpi\_inference.py \newline setup.sh \newline test\_alsaaudiomqtt.py \newline test\_audiostream.py \newline test\_latency.py
+    \newline testmqtt.py
+    & flask \newline scipy \newline zeroconf \newline alsaaudio \newline numpy \newline paho-mqtt\\ \hline
+
+     GOYO-BE \newline /raspberry-pi \newline /models
+    & classifier.tflite
+    & \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{Directory Organization - AI}
+    \begin{tabular}{|p{2cm}|p{2.5cm}|p{2.5cm}|}
+    \hline
+    \textbf{Directory} & \textbf{File names} & \textbf{Used Modules} \\ \hline
+    GOYO-AI \newline /Model \newline /PANNs\_Torch
+    & augmentutils.py \newline PANNsdataloader.py \newline PANNsmodel.py \newline PANNstrain.py
+    & scikit-learn \newline torch \newline tqdm \newline librosa \newline numpy \\ \hline
+
+    GOYO-AI \newline /Model \newline /YAMNET\_TF 
+    & augmentutils.py \newline YAMNetdataloader.py \newline YAMNetinference.py \newline YAMNetlayers.py \newline YAMNettrain.py
+    & scikit-learn \newline tensorflow \newline tensorflow-hub \newline librosa \newline numpy \\ \hline
+
+    GOYO-AI \newline /Model \newline /checkpoints 
+    & best\_model\_yamnet \newline .keras
+    & \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{Directory Organization - ANC}
+    \begin{tabular}{|p{2cm}|p{2.5cm}|p{2.5cm}|}
+    \hline
+    \textbf{Directory} & \textbf{File names} & \textbf{Used Modules} \\ \hline
+    GOYO-ANC \newline /Basic\_ANC
+    & ANC\_test.py \newline fxlms\_controller.py \newline reference\_then\_anc.py \newline session\_utils.py
+    & numpy \newline sounddevice \\ \hline
+
+    GOYO-ANC \newline /enhanced\_ANC
+    & \_\_init\_\_.py \newline config.py \newline fxlms\_controller\_numb \newline a.py \newline io\_utils.py \newline lowfreq\_cli.py \newline session\_utils.py
+    & numpy \newline sounddevice \newline numba \\ \hline
+
+    GOYO-ANC \newline /src
+    & sine\_200Hz.wav \newline sine\_200Hz100s.wav \newline sine\_200Hz200s.wav
+    &  \\ \hline
+
+    GOYO-ANC \newline /utils
+    & inspect\_secondary\_path \newline .py \newline list\_audio\_devices.py \newline make\_sine\_tone.py
+    & numpy \newline pyaudio \newline soundfile \\ \hline
+
+\end{tabular}
+\end{table}
+
+\subsection{Module 1: Frontend}
+
+  \textbf{Purpose}
+
+  To develop GOYO, Flutter was chosen as it supports both iOS and Android platforms as a cross-platform framework. It was selected for its ability to develop
+  applications for both platforms with a single codebase using the Dart programming language. The main purpose of the frontend is to provide a user-friendly interface
+  for smart home noise control management. It supports device discovery through mDNS, secure device pairing, and real-time ANC status monitoring, offering an intuitive
+  experience for controlling GOYO devices and managing per-appliance noise cancellation settings.
+
+\vspace{0.5em}
+  \textbf{Functionality}
+
+  The main functionalities of the frontend include user authentication and account management (sign-up, login, password recovery), automatic GOYO device discovery via
+  mDNS, secure device pairing with MQTT configuration delivery, real-time ANC status visualization and device state monitoring, appliance registration
+  and per-appliance noise cancellation control, personal profile management, and support for cross-platform deployment on iOS and Android.
+
+\vspace{0.5em}
+  \textbf{Location of source code}
+
+  https://github.com/SWE-ITE/GOYO/tree/main/GOYO-FE
+
+\vspace{0.5em}
+  \textbf{Class component}
+
+  \begin{itemize}
+  \item \textbf{main.dart}: This file serves as the main entry point for the Flutter-based mobile application. It initializes the application with Provider for state
+  management, loads environment variables from .env files, and sets up the MaterialApp with custom theme configuration and routing.
+
+  \item \textbf{core folder}: Contains core configuration and authentication utilities.
+  \begin{itemize}
+  \item \textbf{config/env.dart}: Manages environment variables loaded from .env files for different build configurations (development, production). Provides
+  centralized access to API endpoints and configuration settings.
+  \item \textbf{auth/token\_manager.dart}: Handles secure storage and management of authentication tokens using flutter\_secure\_storage. Manages JWT token persistence
+  and retrieval for authenticated API requests.
+  \end{itemize}
+
+  \item \textbf{features folder}: Contains feature-specific state management and business logic.
+  \begin{itemize}
+  \item \textbf{auth/auth\_provider.dart}: Manages authentication state using Provider pattern. Handles user sign-up, login, logout, and token refresh operations.
+  Maintains user session state across the application.
+  \item \textbf{anc/anc\_store.dart}: Manages ANC state and control logic. Handles ANC activation/deactivation, per-appliance targeting, and
+   real-time status updates from GOYO devices.
+  \end{itemize}
+
+  \item \textbf{data folder}: Contains data models and service layer implementations.
+  \begin{itemize}
+  \item \textbf{models/device\_models.dart}: Defines data models for GOYO devices, appliances, and device configurations. Implements JSON serialization/deserialization
+  for API communication.
+  \item \textbf{services/api\_service.dart}: Provides abstraction layer for backend API communication using dio HTTP client. Handles REST API requests with
+  authentication headers, error handling, and response parsing.
+  \item \textbf{services/goyo\_device\_service.dart}: Implements mDNS device discovery using multicast\_dns package. Handles device pairing flow, MQTT configuration
+  delivery, and device registration with backend server.
+  \end{itemize}
+
+  \item \textbf{ui folder}: Contains screen implementations and UI components.
+  \begin{itemize}
+  \item \textbf{splash/splash\_page.dart}: Displays the initial splash screen while loading application resources and checking authentication status.
+  \item \textbf{login/login\_page.dart}: The login screen for GOYO users. Implements email/password authentication with input validation.
+  \item \textbf{login/signup\_page.dart}: The sign-up screen for new GOYO users. Collects user information and creates new accounts through backend API.
+  \item \textbf{login/recovery\_page.dart}: Provides password recovery functionality for users who forgot their credentials.
+  \item \textbf{home/home\_page.dart}: The primary screen of the GOYO application. Displays connected GOYO devices, current ANC status, and quick controls for noise
+  cancellation.
+  \item \textbf{home/widget/bottomnavigationbar.dart}: Implements bottom navigation bar for switching between main sections (Home, Device Manager, Profile).
+  \item \textbf{home/widget/hometab.dart}: Displays the home tab content with device status overview and ANC controls.
+  \item \textbf{device/devicemanager\_page.dart}: Shows the list of discovered and paired GOYO devices. Provides device pairing options through mDNS discovery.
+  \item \textbf{device/widget/deviceinfo.dart}: Displays detailed information for individual GOYO devices, including connection status, MQTT configuration, and device
+  capabilities.
+  \item \textbf{profile/profile\_page.dart}: The profile page section for GOYO users. Displays user information, registered appliances, and application settings.
+  \end{itemize}
+
+  \item \textbf{theme folder}: Contains application theme configuration.
+  \begin{itemize}
+  \item \textbf{app\_theme.dart}: Defines the visual theme for the GOYO application, including color schemes, typography, and component styles. Ensures consistent
+  design across all screens.
+  \end{itemize}
+
+  \item \textbf{pubspec.yaml}: Flutter project configuration file that manages dependencies and project metadata. Specifies required packages including Provider for
+  state management, dio for HTTP requests, flutter\_secure\_storage for secure token storage, and multicast\_dns for device discovery.
+  \end{itemize}
+
+\subsection{Module 2: Backend}
+
+  \textbf{Purpose}
+
+  The primary purpose of the backend is to enable smart home noise control through distributed IoT device coordination and real-time ANC management. It stores user
+  data, GOYO device information, appliance configurations, and ANC status in a PostgreSQL database using SQLAlchemy ORM, while providing secure API endpoints for
+  frontend interactions. Built using FastAPI and Python, it manages MQTT broker for IoT messaging, coordinates mDNS service advertisement for device discovery, and
+  facilitates communication between GOYO devices, ANC server, and mobile clients.
+
+\vspace{0.5em}
+  \textbf{Functionality}
+
+  \textbf{1) Authentication Management}
+
+  Implements user registration and login with bcrypt password encryption and JWT token-based authentication. Provides secure session management with token validation
+  and refresh mechanisms.
+
+  \textbf{2) Device Management}
+
+  Manages GOYO device pairing through mDNS discovery and MQTT credential distribution. Provides APIs for device registration, status updates, and real-time
+  synchronization across the system. Handles device-to-backend communication via MQTT broker.
+
+  \textbf{3) Appliance Management}
+
+  Registers and manages user appliances for per-appliance ANC targeting. Provides APIs for appliance CRUD operations, configuration updates, and appliance-device
+  associations. Enables selective noise cancellation based on appliance types.
+
+  \textbf{4) MQTT Coordination}
+
+  Operates as the central MQTT broker for device-to-server communication. Manages MQTT user authentication, topic-based message routing, and real-time data streaming
+  between GOYO devices, IoT devices, and ANC server. Implements pub/sub messaging for audio streams and control signals.
+
+  \textbf{5) Profile Management}
+
+  Handles user profile information, preferences, and system settings. Provides APIs for profile updates, email verification, and account management.
+
+\vspace{0.5em}
+  \textbf{Location of source code}
+
+  https://github.com/SWE-ITE/GOYO/tree/main/GOYO-BE/ec2-backend
+
+\vspace{0.5em}
+  \textbf{Class component}
+
+  \begin{itemize}
+  \item \textbf{main.py}: FastAPI application entry point. Configures middleware including CORS, initializes database connections, registers API routers, and starts
+  MQTT service. Implements application lifecycle management with startup and shutdown events.
+
+  \item \textbf{config.py}: Manages application configuration using pydantic-settings. Loads environment variables for database connection, MQTT broker settings, JWT
+  secrets, and API endpoints. Provides centralized configuration access across the application.
+
+  \item \textbf{database.py}: Defines SQLAlchemy database engine and session management. Implements declarative base for ORM models and provides database connection
+  dependency injection for FastAPI endpoints.
+
+  \item \textbf{api folder}: REST API endpoint implementations
+  \begin{itemize}
+  \item \textbf{auth.py}: Handles user authentication endpoints. Implements sign-up, login, token refresh, and logout operations. Uses JWT tokens for stateless
+  authentication and bcrypt for password hashing.
+  \item \textbf{devices.py}: Manages GOYO device endpoints. Provides device pairing API that generates MQTT credentials, registers devices with mDNS information, and
+  returns configuration data for device setup. Implements device listing, status updates, and deletion.
+  \item \textbf{appliances.py}: Controls appliance management endpoints. Handles appliance registration, updates, deletion, and listing for per-user appliance
+  configurations. Implements appliance-device association logic.
+  \item \textbf{home.py}: Provides home page data aggregation endpoints. Returns dashboard information including connected devices, active appliances, and ANC status
+  overview.
+  \item \textbf{profile.py}: Manages user profile endpoints. Handles profile information retrieval, updates, email verification, and account settings.
+  \end{itemize}
+
+  \item \textbf{models folder}: Database schema definitions using SQLAlchemy ORM
+  \begin{itemize}
+  \item \textbf{user.py}: Defines user schema with email validation and password encryption. Includes fields for authentication metadata, timestamps, and relationship
+  definitions with devices and appliances.
+  \item \textbf{device.py}: Specifies GOYO device schema with MQTT configuration fields. Includes device identification, connection status, MQTT credentials, and mDNS
+  service information.
+  \item \textbf{appliance.py}: Structures appliance schema for noise source registration. Contains fields for appliance type, targeting configuration, and user
+  associations.
+  \end{itemize}
+
+  \item \textbf{schemas folder}: Pydantic models for request/response validation
+  \begin{itemize}
+  \item \textbf{user.py}: Defines user data transfer objects including UserCreate, UserLogin, UserResponse, and Token schemas. Implements validation rules for email
+  format and password requirements.
+  \item \textbf{device.py}: Specifies device-related schemas including DeviceRegister, DeviceResponse, and DeviceConfig for API communication and validation.
+  \item \textbf{appliance.py}: Defines appliance data models including ApplianceCreate, ApplianceUpdate, and ApplianceResponse for request validation.
+  \item \textbf{profile.py}: Structures profile-related schemas for user information updates and profile data responses.
+  \end{itemize}
+
+  \item \textbf{services folder}: Business logic implementations
+  \begin{itemize}
+  \item \textbf{auth\_service.py}: Implements authentication business logic. Handles user registration with password hashing, login validation, JWT token generation and
+   verification, and session management.
+  \item \textbf{device\_service.py}: Manages device pairing and registration logic. Generates unique MQTT credentials for devices, stores device configuration in
+  database, and coordinates with MQTT broker for user provisioning.
+  \item \textbf{appliance\_service.py}: Implements appliance management operations. Handles appliance CRUD logic, validates appliance-user associations, and manages
+  per-appliance targeting configurations.
+  \item \textbf{mqtt\_service.py}: Manages MQTT broker integration using paho-mqtt. Handles MQTT client initialization, connection management, topic
+  subscription/publishing, and message routing for device communication.
+  \item \textbf{profile\_service.py}: Implements user profile management logic. Handles profile data updates, email verification workflows, and account setting
+  modifications.
+  \end{itemize}
+
+  \item \textbf{utils folder}: Utility functions and helper modules
+  \begin{itemize}
+  \item \textbf{security.py}: Provides security utilities including password hashing with bcrypt, JWT token creation and validation using python-jose, and token payload
+   extraction for authentication.
+  \item \textbf{dependencies.py}: Defines FastAPI dependency injection functions. Implements database session management, current user extraction from JWT tokens, and
+  authentication middleware.
+  \item \textbf{email.py}: Handles email-related utilities for verification and notifications. Implements email format validation and email sending functionality.
+  \item \textbf{audio\_device.py}: Provides audio device utility functions for MQTT topic generation and device identification.
+  \end{itemize}
+  \end{itemize}
+
+\subsection{Module 3: ANC Server}
+
+  \textbf{Purpose}
+
+  The primary purpose of the ANC Server is to serve as the core signal processing engine for active noise cancellation in the GOYO system. Built using FastAPI and
+  Python on AWS EC2, it receives reference audio streams from IoT devices or simulated GOYO devices via MQTT broker, processes these signals through FxLMS adaptive filtering algorithms, and generates phase-inverted anti-noise waveforms in real-time. The server implements sophisticated audio
+  processing pipelines utilizing numpy for numerical computations and numba for just-in-time compilation to achieve low-latency performance, while maintaining
+  sub-100ms latency requirements for effective ANC performance. It acts as the central processing hub that transforms noise signatures into cancellation signals
+  through MQTT-based communication.
+
+\vspace{0.5em}
+  \textbf{Functionality}
+
+  \textbf{1) Audio Stream Reception}
+
+  Receives reference audio streams from IoT devices or GOYO devices via MQTT broker. Processes incoming audio data with appliance classification metadata to identify
+  noise sources. Implements buffering and synchronization mechanisms to handle real-time audio streams.
+
+  \textbf{2) Signal Processing}
+
+  Implements FxLMS adaptive filtering algorithm for real-time noise cancellation. Applies secondary path modeling to compensate for
+  acoustic delay between anti-noise speaker and error microphone. Processes error microphone feedback for continuous filter coefficient adaptation using block-based
+  audio processing. Utilizes numba JIT compilation for optimized performance with configurable step sizes and filter lengths. Provides performance metrics including
+  mean squared error and convergence monitoring for algorithm optimization.
+
+  \textbf{3) Anti-Noise Generation}
+
+  Generates phase-inverted anti-noise waveforms using FxLMS-processed filter coefficients that destructively interfere with reference noise. Implements secondary path
+  compensation to account for acoustic path between speaker and error microphone. Manages audio buffer synchronization with configurable block sizes to maintain timing
+   alignment between reference and anti-noise signals. Applies vectorized numpy operations for efficient waveform generation and ensures continuous anti-noise output
+  without gaps or artifacts through synchronized block processing.
+
+  \textbf{4) MQTT Publishing}
+
+  Transmits generated anti-noise audio to GOYO device speakers via MQTT broker. Broadcasts real-time ANC status updates including activation state, processing latency,
+   and performance metrics. Implements topic-based message routing for efficient device-specific anti-noise delivery.
+
+\vspace{0.5em}
+  \textbf{Location of source code} \\
+  MQTT Integration: https://github.com/SWE-ITE/GOYO/tree \newline /main/GOYO-BE/ec2-anc
+
+  ANC Algorithms: https://github.com/SWE-ITE/GOYO/tree \newline /main/GOYO-ANC
+
+\vspace{0.5em}
+  \textbf{Class component}
+
+  \textbf{GOYO-BE/ec2-anc - MQTT Integration Layer}
+
+  \begin{itemize}
+  \item \textbf{main.py}: FastAPI application entry point for ANC server. Configures CORS middleware, initializes WebSocket endpoints for status monitoring, and
+  manages application lifecycle. Starts MQTT subscriber and publisher services for audio stream handling. Implements health check endpoints and error handling for
+  production deployment.
+
+  \item \textbf{config.py}: Manages ANC server configuration using pydantic-settings. Loads environment variables for MQTT broker connection, audio processing
+  parameters (sample rate, channels, chunk size, buffer size), and server settings. Provides centralized access to configuration across ANC processing modules.
+
+  \item \textbf{anc\_controller.py}: Orchestrates ANC activation and deactivation logic. Manages per-appliance targeting configuration and determines which appliances
+  should have active noise cancellation. Coordinates between MQTT subscriber, audio processor, and MQTT publisher components. Implements state management for ANC
+  system status and appliance-specific control.
+
+  \item \textbf{audio\_processor.py}: Implements FxLMS adaptive filtering algorithm integration for ANC processing. Applies secondary path modeling and processes error
+   microphone feedback for filter adaptation. Utilizes GOYO-ANC algorithms for anti-noise generation. Manages audio buffer synchronization and timing alignment between
+   reference and anti-noise streams.
+
+  \item \textbf{mqtt\_subscriber.py}: Manages MQTT subscription for incoming audio streams using paho-mqtt. Connects to MQTT broker with authentication credentials and
+   subscribes to reference audio topics. Receives and decodes audio data with appliance classification metadata. Implements message queuing and forwards audio streams
+  to audio processor. Handles connection failures with automatic reconnection logic.
+
+  \item \textbf{mqtt\_publisher.py}: Manages MQTT publishing for outgoing anti-noise streams using paho-mqtt. Encodes processed anti-noise audio and publishes to
+  device-specific topics. Broadcasts ANC status updates including activation state, processing latency, and buffer status. Implements message prioritization to ensure
+  anti-noise delivery takes precedence. Handles connection management and publishing failures with retry mechanisms.
+  \end{itemize}
+
+  \textbf{GOYO-ANC - Core ANC Algorithms}
+
+  \begin{itemize}
+  \item \textbf{Basic\_ANC folder}: Basic ANC implementation with FxLMS algorithm
+  \begin{itemize}
+  \item \textbf{fxlms\_controller.py}: Implements core FxLMS adaptive filtering algorithm. Defines FxLMSANC class with filter coefficient adaptation using error
+  microphone feedback. Applies secondary path modeling to compensate for acoustic delay. Implements block-based audio processing with configurable step size and filter
+   length.
+  \item \textbf{session\_utils.py}: Provides session management utilities for ANC operations. Implements controller initialization with secondary path impulse
+  response. Manages reference signal playback synchronized with anti-noise generation.
+  \item \textbf{reference\_then\_anc.py}: Implements reference-then-ANC operation mode for noise reduction demonstration.
+  \item \textbf{ANC\_test.py}: Test script for ANC system validation with performance metrics logging.
+  \end{itemize}
+
+  \item \textbf{enhanced\_ANC folder}: Enhanced ANC implementation with numba optimization
+  \begin{itemize}
+  \item \textbf{fxlms\_controller\_numba.py}: Numba-optimized FxLMS implementation with JIT-compiled signal processing for reduced computational latency.
+  \item \textbf{config.py}: Configuration management for enhanced ANC parameters including sample rate, block size, and filter settings.
+  \item \textbf{io\_utils.py}: Audio I/O utilities for file reading, writing, and stream formatting using soundfile.
+  \item \textbf{lowfreq\_cli.py}: Command-line interface for low-frequency noise cancellation with interactive ANC control.
+  \end{itemize}
+
+  \item \textbf{utils folder}: System configuration and testing utilities
+  \begin{itemize}
+  \item \textbf{inspect\_secondary\_path.py}: Implements secondary path acoustic modeling by measuring impulse response between speaker and microphone.
+  \item \textbf{list\_audio\_devices.py}: Enumerates available audio devices using pyaudio for system setup.
+  \item \textbf{make\_sine\_tone.py}: Generates sine wave test signals for ANC calibration and validation.
+  \end{itemize}
+  \end{itemize}
+
+\subsection{Module 4: AI Module}
+
+  \textbf{Purpose}
+
+  The primary purpose of the AI Module is to serve as the offline training and model development environment for GOYO's edge AI capabilities. This module is responsible
+   for training YAMNet-based and PANNs-based appliance noise classification models that run on IoT devices or simulated GOYO devices during development. Built using
+  Python with TensorFlow and PyTorch frameworks, it processes large-scale audio datasets to train deep learning models that distinguish between different household
+  appliance noises including refrigerator, air conditioner, washing machine, and vacuum cleaner sounds. The trained models are optimized for edge deployment using
+  TensorFlow Lite quantization and exported in formats compatible with Raspberry Pi inference, enabling real-time on-device classification without cloud dependency.
+
+\vspace{0.5em}
+  \textbf{Functionality}
+
+  \textbf{1) Dataset Management}
+
+  Manages large-scale audio datasets stored on Google Drive due to size constraints. Implements data preprocessing including audio loading, resampling, and
+  normalization. Applies data augmentation techniques including noise injection, pitch shifting, time masking, and frequency masking to improve model robustness.
+  Implements train-test split using scikit-learn for proper evaluation.
+
+  \textbf{2) Model Training}
+
+  Trains YAMNet-based models using TensorFlow for appliance-specific noise classification. Implements PANNs-based models using PyTorch as alternative architecture for
+  comparison. Fine-tunes pre-trained models on custom appliance noise datasets for transfer learning. Implements training loops with callbacks for model checkpointing,
+  early stopping, and learning rate scheduling. Utilizes class weighting to handle imbalanced datasets across different appliance types.
+
+  \textbf{3) Model Optimization}
+
+  Converts trained models to TensorFlow Lite format for edge deployment on Raspberry Pi. Applies quantization techniques to reduce model size and improve inference
+  speed on resource-constrained devices. Implements model validation and performance testing on test datasets. Evaluates classification accuracy, precision, recall, and
+   F1-scores for each appliance class.
+
+  \textbf{4) Voice Activity Detection}
+
+  Integrates VAD model training and tuning to prevent ANC interference during conversations. Implements speech detection algorithms to
+  identify human voice presence in audio streams. Trains models to distinguish between appliance noise and speech for intelligent ANC control.
+
+  \textbf{5) Model Deployment}
+
+  Packages trained models for deployment to GOYO devices running on Raspberry Pi. Implements model export utilities that generate compatible formats for edge inference.
+   Provides inference scripts for real-time classification on captured audio streams. Enables seamless model updates and versioning for deployed devices.
+
+\vspace{0.5em}
+  \textbf{Location of source code}
+
+  https://github.com/SWE-ITE/GOYO/tree/main/GOYO-AI
+
+\vspace{0.5em}
+  \textbf{Class component}
+
+  \begin{itemize}
+  \item \textbf{Model/PANNs\_Torch folder}: PyTorch implementation of PANNs models
+  \begin{itemize}
+  \item \textbf{PANNs\_train.py}: Main training script for PANNs models using PyTorch. Implements training loop with model checkpointing and evaluation. Utilizes
+  scikit-learn for train-test split and class weight calculation. Loads audio data using PANNs\_dataloader and applies augmentation from augment\_utils. Configures
+  optimizer settings and learning rate scheduling for model convergence.
+  \item \textbf{PANNs\_model.py}: Defines PANNs neural network architecture using PyTorch. Implements custom model layers and forward propagation logic for audio
+  classification. Adapts pre-trained PANNs models for appliance noise classification task. Provides model instantiation and weight initialization functions.
+  \item \textbf{PANNs\_dataloader.py}: Implements PyTorch Dataset and DataLoader for audio data loading. Handles audio file reading using librosa and preprocessing.
+  Applies augmentation techniques during training for improved generalization. Implements batch generation and data shuffling for training efficiency.
+  \item \textbf{augment\_utils.py}: Provides audio augmentation utilities for data preprocessing. Implements noise injection to simulate real-world acoustic conditions.
+   Applies pitch shifting to increase pitch variance in training data. Implements time masking and frequency masking for robust feature learning.
+  \end{itemize}
+
+  \item \textbf{Model/YAMNet\_TF folder}: TensorFlow implementation of YAMNet models
+  \begin{itemize}
+  \item \textbf{YAMNet\_train.py}: Main training script for YAMNet models using TensorFlow. Implements transfer learning by fine-tuning pre-trained YAMNet from
+  TensorFlow Hub. Utilizes keras callbacks including ModelCheckpoint for saving best models. Loads audio data using YAMNet\_dataloader and applies augmentation.
+  Configures training hyperparameters and evaluation metrics.
+  \item \textbf{YAMNet\_layers.py}: Defines custom YAMNet layers using TensorFlow Keras. Implements YAMNetLayer that wraps pre-trained YAMNet model with custom
+  classification head. Adapts YAMNet embeddings for appliance-specific classification task. Provides layer configuration for model architecture customization.
+  \item \textbf{YAMNet\_dataloader.py}: Implements TensorFlow Keras Sequence for efficient data loading. Handles audio preprocessing and feature extraction compatible
+  with YAMNet input requirements. Applies augmentation techniques during training batches. Implements generator-based data loading for memory efficiency with large
+  datasets.
+  \item \textbf{YAMNet\_inference.py}: Provides inference utilities for trained YAMNet models. Implements model loading from saved checkpoints in keras format. Applies
+  preprocessing to input audio for classification. Returns classification results with confidence scores and predicted appliance types.
+  \item \textbf{augment\_utils.py}: Provides audio augmentation utilities for data preprocessing. Implements noise injection, pitch shifting, time masking, and
+  frequency masking techniques identical to PANNs augmentation for consistency.
+  \end{itemize}
+
+  \item \textbf{Model/checkpoints folder}: Stores trained model checkpoints
+  \begin{itemize}
+  \item \textbf{best\_model\_yamnet.keras}: Best performing YAMNet model saved in Keras format. Contains trained weights and architecture for appliance noise
+  classification. Ready for deployment to Raspberry Pi after TensorFlow Lite conversion. Represents the production model for edge inference on GOYO devices.
+  \end{itemize}
+  \end{itemize}
+
+\subsection{Module 5: GOYO Device}
+
+  \textbf{Purpose}
+
+  The primary purpose of the GOYO Device is to serve as the physical ANC hardware deployed near the user, typically mounted on a smart chair or desk. Implemented on
+  Raspberry Pi, this device contains an error microphone that measures residual noise at the user's ear position after ANC is applied, speakers that output
+  phase-inverted anti-noise signals for active noise cancellation, and an MQTT client that receives anti-noise audio from the ANC Server and transmits error signals
+  for adaptive optimization. The device uses ALSA (Advanced Linux Sound Architecture) for low-latency audio capture and playback, with hardware configuration including
+   multiple USB audio interfaces for reference microphone, error microphone, and speaker output. The device maintains persistent systemd services for automatic startup
+   and recovery, ensuring reliable operation in production smart home environments. Additionally, it provides an mDNS discovery server that enables mobile applications
+   to automatically detect and pair GOYO devices on the local network.
+
+\vspace{0.5em}
+  \textbf{Functionality}
+
+  \textbf{1) Error Microphone Monitoring}
+
+  Captures residual noise at user's ear position using error microphone after ANC is applied. Provides real-time feedback to ANC Server for adaptive algorithm
+  optimization. Implements low-latency audio capture using ALSA for effective ANC performance. Enables continuous monitoring of noise cancellation effectiveness.
+
+  \textbf{2) Anti-Noise Playback}
+
+  Receives anti-noise audio streams from ANC Server via MQTT broker. Plays phase-inverted signals through near-ear speakers for localized noise cancellation.
+  Implements synchronized playback with minimal latency to maintain destructive interference. Manages audio buffer to ensure continuous anti-noise output without gaps.
+
+  \textbf{3) Device Discovery}
+
+  Implements mDNS service advertisement for automatic device discovery by mobile applications. Broadcasts device information including device name, capabilities, and
+  connection endpoints on local network. Provides HTTP server for device pairing API that accepts MQTT configuration from paired users. Enables seamless device
+  onboarding without manual network configuration.
+
+  \textbf{4) MQTT Communication}
+
+  Maintains persistent connection to MQTT broker with authenticated credentials. Subscribes to device-specific topics for receiving anti-noise streams and control
+  commands. Publishes error microphone feedback and device status updates to ANC Server. Implements automatic reconnection logic for network resilience.
+
+  \textbf{5) Edge AI Inference}
+
+  In current development environment, simulates IoT Device functionality by running YAMNet-based appliance classification on reference audio. Performs real-time
+  inference on captured audio streams to identify appliance noise types. Implements VAD for speech detection to prevent ANC interference during conversations.
+  Transmits classified audio and metadata to ANC Server via MQTT.
+
+\vspace{0.5em}
+  \textbf{Location of source code}
+
+  https://github.com/SWE-ITE/GOYO/tree/main/GOYO-BE/raspberry-pi
+
+\vspace{0.5em}
+  \textbf{Class component}
+
+  \begin{itemize}
+  \item \textbf{audio\_client.py}: Main audio processing client for GOYO device. Implements audio capture using ALSA (alsaaudio) for reference and error microphones.
+  Integrates rpi\_inference.py for edge AI classification of appliance noises. Implements VAD using signal processing to detect speech presence. Manages MQTT client
+  connection using paho-mqtt for bidirectional communication with ANC Server. Publishes reference audio streams with classification metadata to ANC Server. Subscribes
+  to anti-noise topics and plays received audio through speakers. Implements audio buffering and synchronization for continuous operation. Runs as systemd service
+  (goyo-audio.service) for automatic startup and recovery.
+
+  \item \textbf{device\_server.py}: mDNS discovery server implemented using Flask and Zeroconf. Broadcasts GOYO device presence on local network using multicast DNS
+  service advertisement. Provides HTTP API endpoints for device pairing and MQTT configuration delivery. Accepts MQTT credentials from paired users and stores in
+  goyo\_config.json. Returns device information including capabilities, hardware configuration, and connection status. Enables mobile applications to discover and pair
+   devices without manual network configuration. Runs as systemd service (goyo-device-server.service) for persistent availability.
+
+  \item \textbf{rpi\_inference.py}: Edge AI inference engine for appliance noise classification on Raspberry Pi. Loads trained YAMNet model from Model/checkpoints
+  directory for on-device inference. Implements audio preprocessing including resampling and feature extraction for model input. Performs real-time classification on
+  audio chunks to identify appliance types. Returns classification results with confidence scores and predicted appliance labels. Optimized for Raspberry Pi
+  performance with efficient numpy operations. In production, this functionality would run on individual IoT appliances rather than GOYO device.
+
+  \item \textbf{goyo\_config.json}: Configuration file storing MQTT broker connection settings. Contains MQTT broker host, port, username, and password for
+  authenticated connection. Generated during device pairing process when user pairs device through mobile application. Provides persistent storage of device
+  configuration across reboots.
+
+  \item \textbf{setup.sh}: Device setup script for initial GOYO device configuration. Installs required system dependencies and Python packages from requirements.txt.
+  Configures ALSA audio interfaces and sets up USB audio device permissions. Creates systemd service files and enables automatic startup. Implements configuration
+  validation and network connectivity tests.
+
+  \item \textbf{goyo-audio.service}: Systemd service unit for audio\_client.py automatic startup. Configures service to start on boot and restart on failure for
+  reliability. Sets environment variables and working directory for audio client execution. Implements dependency ordering to ensure MQTT broker connectivity before
+  starting.
+
+  \item \textbf{goyo-device-server.service}: Systemd service unit for device\_server.py automatic startup. Ensures mDNS discovery server is always available for device
+   pairing. Configures restart policy for network resilience. Manages service lifecycle for production deployment.
+
+  \item \textbf{requirements.txt}: Python package dependencies for Raspberry Pi deployment. Includes alsaaudio for ALSA audio interface, paho-mqtt for MQTT
+  communication, flask for HTTP server, zeroconf for mDNS service advertisement, numpy and scipy for signal processing, and librosa for audio preprocessing.
+  \end{itemize}
+
+\subsection{Module 6: IoT Device}
+
+  \textbf{Purpose}
+
+  The IoT Device module represents the assumed smart home environment where each major household appliance such as air conditioner, refrigerator, or washing machine is
+  equipped with edge AI capabilities for distributed noise sensing and classification. In this envisioned production architecture, each appliance contains a reference
+  microphone that captures the noise signature at the source, an AI classification model running YAMNet-based sound classification to identify appliance noise types in
+  real-time, a VAD system that detects human speech to prevent ANC interference during conversations, and an MQTT client that transmits
+  classified noise data and audio streams to the ANC Server. This distributed edge AI approach reduces network bandwidth, enables real-time noise classification without
+   cloud dependency, and provides localized noise sensing at each appliance source for optimal ANC performance. However, in the current development and testing
+  environment, IoT Device functionality is simulated by the GOYO Device implemented on Raspberry Pi for convenience, where the single Raspberry Pi includes both
+  reference microphone capabilities and AI inference to emulate the distributed IoT sensing network that would exist in a fully deployed smart home.
+
+\vspace{0.5em}
+  \textbf{Functionality}
+
+  \textbf{1) Noise Capture}
+
+  Captures appliance noise signatures at the source using reference microphones positioned near each appliance. Implements continuous audio streaming with configurable
+  sample rates and channels. Provides high-quality audio capture to enable accurate noise classification and effective ANC processing.
+
+  \textbf{2) Edge AI Classification}
+
+  Performs on-device inference using YAMNet-based models to classify appliance noise types in real-time. Identifies specific appliance signatures including refrigerator
+   hum, AC fan noise, washing machine vibration, and vacuum cleaner sounds. Generates classification confidence scores and appliance type metadata for each audio
+  stream. Enables intelligent noise source identification without cloud dependency.
+
+  \textbf{3) Voice Activity Detection}
+
+  Implements VAD algorithms to detect human speech presence in audio streams. Distinguishes between appliance noise and conversational speech to prevent ANC
+  interference during user conversations. Provides real-time speech detection flags to ANC system for intelligent activation control. Ensures ANC system does not
+  interfere with voice communication in the smart home environment.
+
+  \textbf{4) MQTT Communication}
+
+  Transmits classified audio streams and metadata to ANC Server via MQTT broker. Publishes appliance identification, classification confidence, and VAD status along
+  with reference audio data. Implements efficient topic-based messaging for device-specific audio routing. Maintains persistent connection to MQTT broker for reliable
+  real-time communication.
+
+  \textbf{5) Distributed Sensing}
+
+  Operates as part of distributed IoT sensing network with multiple appliances providing simultaneous noise monitoring. Enables per-appliance noise source tracking for
+  selective ANC targeting. Coordinates with backend server for appliance registration and targeting configuration. Provides scalable architecture for smart home
+  environments with multiple noise sources.
+
+\vspace{0.5em}
+  \textbf{Location of source code}
+
+  https://github.com/SWE-ITE/GOYO/tree/main/GOYO-BE/raspberry-pi
+
+\vspace{0.5em}
+  \textbf{Class component}
+
+  In the production deployment, each IoT-enabled appliance would contain embedded hardware running the edge AI classification model with integrated microphone and MQTT
+  client. The appliance would execute inference on captured audio locally and transmit results to the central ANC system.
+
+  In the current development environment, this functionality is implemented on Raspberry Pi as part of the GOYO Device module for testing and demonstration purposes.
+  The relevant implementation files include:
+
+  \begin{itemize}
+  \item \textbf{rpi\_inference.py} (in raspberry-pi folder): Implements YAMNet-based edge AI inference engine for appliance noise classification. Loads trained model
+  from checkpoints and performs real-time classification on audio streams. This simulates the AI classification functionality that would run on each IoT appliance.
+
+  \item \textbf{audio\_client.py} (in raspberry-pi folder): Captures reference audio using ALSA and implements VAD for speech detection. Coordinates audio capture, AI
+  inference, and MQTT publishing for classified audio streams. This simulates the complete IoT device functionality including noise capture, classification, and
+  communication.
+
+  \item \textbf{Model/checkpoints/best\_model\_yamnet.keras} (in goyo\_ai folder): Trained YAMNet model deployed to Raspberry Pi for edge inference. Represents the AI
+  model that would be embedded in each IoT appliance for on-device classification.
+  \end{itemize}
+
+\section{Use Cases}
+
+\subsection{Sign Up}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\linewidth]{images/SignUp.png}
+    \caption{Sign-up page}
+\end{figure}
+
+Users can create an account by providing their basic information, including their name, email address, password, password confirmation, and phone number.
+After submitting the registration form, they are redirected to the login screen, where they can sign in and start using their newly created account.
+
+\subsection{Login}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\linewidth]{images/Login.png}
+    \caption{Sign-up page}
+\end{figure}
+
+A Login Page allows users to access their accounts by verifying their credentials through ID and password authentication. Users simply enter their registered ID and password to sign in and begin using the service.
+
+\subsection{Loading}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\linewidth]{images/splash.png}
+    \caption{Loading screen}
+\end{figure}
+
+A Loading Page is the first screen displayed when the app launches. It remains visible while essential components are initialized and automatically transitions to the next screen once the setup is complete.
+
+\subsection{Main Page}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\linewidth]{images/FocusMode.png}
+    \caption{Home page}
+\end{figure}
+
+On the Home Page, users can enable or disable noise cancellation. They can also view a real-time list of household appliances that are currently generating noise.
+
+\subsection{Device Management Page}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\linewidth]{images/DeviceManager.png}
+    \caption{Device management page}
+\end{figure}
+
+On the Device Management page, users can check the status of their connected GOYO device as well as other IoT appliances. They can also search for and add new devices using the Wi-Fi scan feature.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\linewidth]{images/discover.png}
+    \caption{Scan screen}
+\end{figure}
+
+\subsection{Profile Page}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\linewidth]{images/Profile.png}
+    \caption{Profile page}
+\end{figure}
+
+On the Profile Page, users can view their personal information and adjust noise-related settings. They can switch between Normal Mode and Focus Mode, check their noise logs, and log out of the app.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\linewidth]{images/NoiseLog_cut.png}
+    \caption{Noise log screen}
+\end{figure}
+
+\subsection{User Experience}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{images/dB.png}
+    \caption{dB transition graph}
+\end{figure}
+
+Users can experience a noise reduction of around 10 to 20 decibels. The graph above shows the measured decibel levels of the noise actually heard by the user.
+
+\section{Discussion}
+
+\subsection{Difficulties}
+Throughout the development and testing of the GOYO system, we encountered several technical challenges that impacted the overall performance and consistency of the active noise cancellation implementation.
+
+Hardware limitations posed significant constraints on audio quality and system performance. The microphones and speakers used in our prototype setup exhibited modest fidelity, which affected both the accuracy of noise capture and the clarity of anti-noise signal reproduction. The limited frequency response and dynamic range of these components introduced distortions that complicated the adaptive filtering process, requiring additional signal conditioning and calibration efforts to achieve acceptable noise reduction. 
+
+The inherent sensitivity of active noise cancellation to environmental conditions presented substantial challenges in obtaining consistent experimental results. While we achieved successful noise cancellation in controlled test scenarios, the performance proved highly dependent on precise microphone and speaker positioning, room acoustics, and ambient environmental factors. Minor variations in device placement or changes in the acoustic environment led to noticeable fluctuations in cancellation effectiveness, making it difficult to establish reproducible baseline measurements. This variability highlighted the complexity of deploying ANC systems in real-world smart home environments where acoustic conditions are dynamic and unpredictable. 
+
+Network latency introduced through the MQTT-based communication architecture presented fundamental limitations for certain noise types. The cumulative delay across the entire signal path—from reference microphone capture, through MQTT transmission to the ANC server, signal processing, MQTT transmission back to the device, and finally error microphone feedback—resulted in processing latencies ranging from 120-150ms. This latency exceeded the critical threshold for effective cancellation of rapidly varying or transient noises, restricting the system's applicability primarily to continuous, quasi-stationary noise sources with relatively stable waveform characteristics, such as constant-frequency appliance hums. For noise signals with rapid temporal variations or unpredictable patterns, the delayed anti-noise output arrived too late to achieve destructive interference, significantly limiting the scope of addressable noise types in the current
+implementation.
+
+\subsection{Conclusion}
+This project presented GOYO, an AI-based active noise control system for smart home environments that integrates edge AI classification, distributed IoT sensing, and adaptive FxLMS filtering to achieve personalized noise management through appliance-specific targeting. Despite technical challenges, the system successfully demonstrated measurable noise reduction in controlled scenarios, validating the feasibility of combining MQTT-based IoT communication with adaptive filtering for residential applications.
+
+Our initial design constrained the effective cancellation zone to the user’s head vicinity, positioning error microphones and speakers on a smart chair for optimal feedback. However, successful test cases revealed noise reduction extending beyond this targeted region, with users experiencing perceptible cancellation even when positioned away from the designated listening position. This suggests potential for broader spatial coverage than initially anticipated, indicating that with optimized speaker placement and filter parameters, GOYO could extend effective noise cancellation to larger zones such as entire desk areas or small rooms.
+
+Future work should address identified limitations through improved hardware, enhanced acoustic modeling, and latency reduction via edge processing. The promising extended spatial coverage results warrant investigation into scalable ANC configurations for whole-room noise management in smart home settings.
 
 \begin{thebibliography}{9}
 
@@ -545,6 +1440,19 @@ in \textit{APSIPA Annual Summit and Conference}, Xi’an, China, 2011.
 김성현, M. E. Altinsoy, and 김중관, 
 "차량 능동 소음 제어 시스템에서 제어 위치 선택에 따른 소음 저감 성능에 관한 예비 평가," 
 \textit{한국소음진동공학회논문집}, vol. 32, no. 6, pp. 544--551, 2022, doi: 10.5050/KSNVE.2022.32.6.544.
+
+\bibitem{mobilenets}
+A.~G.~Howard, M.~Zhu, B.~Chen, D.~Kalenichenko, W.~Wang, T.~Weyand, M.~Andreetto, and H.~Adam, "MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications,"
+\textit{arXiv preprint arXiv:1704.04861}, 2017.
+
+\bibitem{panns}
+Q.~Kong, Y.~Cao, T.~Iqbal, Y.~Wang, W.~Wang, and M.~D.~Plumbley, "PANNs: Large-Scale Pretrained Audio Neural Networks for Audio Pattern Recognition,"
+\textit{IEEE/ACM Transactions on Audio, Speech, and Language Processing}, 
+vol.~28, pp.~2880--2894, 2020.
+
+\bibitem{audioset}
+J.~F.~Gemmeke, D.~P.~Ellis, D.~Freedman, A.~Jansen, W.~Lawrence, R.~C.~Moore, M.~Plakal, and M.~Ritter, "Audio Set: An ontology and human-labeled dataset for audio events,"
+in \textit{Proc. IEEE ICASSP}, 2017, pp.~776--780.
 
 \end{thebibliography}
 
