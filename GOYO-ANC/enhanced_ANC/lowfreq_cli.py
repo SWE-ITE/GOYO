@@ -20,16 +20,28 @@ from typing import Optional
 
 import numpy as np
 
-# Ensure repository root is importable when executed directly.
-REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+# Ensure parent directory (GOYO-ANC) is in sys.path to access Basic_ANC
+GOYO_ANC_ROOT = Path(__file__).resolve().parent.parent
+if str(GOYO_ANC_ROOT) not in sys.path:
+    sys.path.insert(0, str(GOYO_ANC_ROOT))
 
-from ANC.basic_ANC.fxlms_controller import AncMetrics
-from ANC.basic_ANC.session_utils import create_controller, play_reference
-from ANC.enhanced_ANC import config as cfg
-from ANC.enhanced_ANC import io_utils
-from ANC.enhanced_ANC.fxlms_controller_numba import NumbaFxLMSANC
+# Also ensure Basic_ANC modules are available if needed
+# But since we added GOYO-ANC to path, "from Basic_ANC import ..." works.
+# However, imports below use "ANC.basic_ANC...". 
+# We need to change them to "Basic_ANC..." or relative imports.
+
+try:
+    from Basic_ANC.fxlms_controller import AncMetrics
+    from Basic_ANC.session_utils import create_controller, play_reference
+except ImportError:
+    # Fallback if package structure is different (e.g. strict module rules)
+    sys.path.append(str(GOYO_ANC_ROOT / "Basic_ANC"))
+    from fxlms_controller import AncMetrics
+    from session_utils import create_controller, play_reference
+
+from . import config as cfg
+from . import io_utils
+from .fxlms_controller_numba import NumbaFxLMSANC
 
 REFERENCE_PATH = cfg.REFERENCE_PATH
 SECONDARY_PATH = cfg.SECONDARY_PATH

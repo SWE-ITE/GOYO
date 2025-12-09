@@ -10,15 +10,20 @@ from __future__ import annotations
 
 import logging
 import math
+import sys
 import threading
 import time
+from pathlib import Path
 from typing import Optional, Tuple
 
 import numpy as np
 import sounddevice as sd  # type: ignore
 
-from ANC.basic_ANC.session_utils import create_controller
-from ANC.enhanced_ANC import config as cfg
+# Add parent directory to path to locate Basic_ANC
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from Basic_ANC.session_utils import create_controller
+from . import config as cfg
 
 
 def resolve_device_index(device_index: Optional[int], direction: str) -> int:

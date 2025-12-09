@@ -11,12 +11,17 @@ the low-latency optimizations.
 from __future__ import annotations
 
 import math
+import sys
+from pathlib import Path
 from typing import Tuple
 
 import numpy as np
 from numba import njit
 
-from ANC.basic_ANC.fxlms_controller import (
+# Add parent directory to path to locate Basic_ANC
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from Basic_ANC.fxlms_controller import (
     EPSILON,
     MAX_NORM,
     MIN_REFERENCE_POWER,

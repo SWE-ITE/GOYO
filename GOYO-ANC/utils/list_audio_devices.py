@@ -1,5 +1,9 @@
 """
-List available audio devices with PyAudio.
+List available audio devices using sounddevice.
+
+This script prints the device ID and capabilities (input/output channels, sample rate)
+for all audio devices detected by PortAudio. Use the device ID (Index) to configure
+the ANC controller.
 
 Run:
     python utils/list_audio_devices.py
@@ -7,24 +11,26 @@ Run:
 
 from __future__ import annotations
 
-import pyaudio  # type: ignore
+import sounddevice as sd  # type: ignore
 
 
 def main() -> int:
-    pa = pyaudio.PyAudio()
     try:
-        count = pa.get_device_count()
-        print(f"device_count={count}")
-        for i in range(count):
-            info = pa.get_device_info_by_index(i)
-            print(
-                f"[{i}] {info['name']}  "
-                f"inputs={info['maxInputChannels']}  "
-                f"outputs={info['maxOutputChannels']}  "
-                f"rate={int(info['defaultSampleRate'])}"
-            )
-    finally:
-        pa.terminate()
+        devices = sd.query_devices()
+        print(f"Found {len(devices)} device(s):\n")
+        print(devices)
+        
+        # Optionally, print more detailed info if needed
+        # for i, dev in enumerate(devices):
+        #     print(f"\nDevice {i}: {dev['name']}")
+        #     print(f"  Max Input Channels: {dev['max_input_channels']}")
+        #     print(f"  Max Output Channels: {dev['max_output_channels']}")
+        #     print(f"  Default Sample Rate: {dev['default_samplerate']}")
+
+    except Exception as e:
+        print(f"Error listing devices: {e}")
+        return 1
+        
     return 0
 
 
