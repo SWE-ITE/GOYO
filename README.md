@@ -2,15 +2,6 @@
 
 <img width="1848" height="1070" alt="image" src="https://github.com/user-attachments/assets/d73471c7-87f0-409c-833b-1c055f6ad31c" />
 
-
-Tech Blog: [GOYO System Blog](http://bit.ly/4aBjRQY)
-
-PDF: [GOYO System Documentation](./Documents/GOYO.pdf)
-
-LaTeX: [GOYO System Documentation](./Documents/GOYO.tex)
-
-PPT: [GOYO System Presentation](./~~)
-
 ---
 
 ## Proposal
@@ -31,12 +22,22 @@ This research demonstrates how a home-wide IoT sensing network with edge AI proc
 ## Video
 Click below image to watch our demo video
 
-[![시연 영상 보러가기](https://img.youtube.com/vi/hfaouPVj6ac/0.jpg)](https://youtu.be/hfaouPVj6ac)
-
 <a href="https://youtu.be/hfaouPVj6ac">
   <img src="https://img.youtube.com/vi/hfaouPVj6ac/maxresdefault.jpg" alt="시연 영상 보러가기" width="100%">
 </a>
 
+---
+
+## Links
+
+
+Tech Blog: [GOYO System Blog](http://bit.ly/4aBjRQY)
+
+PDF: [GOYO System Documentation](./Documents/GOYO.pdf)
+
+LaTeX: [GOYO System Documentation](./Documents/GOYO.tex)
+
+PPT: [GOYO System Presentation](./~~)
 
 ---
 
