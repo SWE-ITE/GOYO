@@ -4,8 +4,6 @@ PDF: [GOYO System Documentation](./Documents/GOYO.pdf)
 
 LaTeX: [GOYO System Documentation](./Documents/GOYO.tex)
 
-Youtube: [Demo Video](https://youtu.be/vLS-VJTuBUU)
-
 ---
 
 ## Proposal
@@ -22,6 +20,17 @@ This research demonstrates how a home-wide IoT sensing network with edge AI proc
 ![GOYO System Architecture](./Documents/System_Architecture.png)
 
 ---
+
+## Video
+Click below image to watch our demo video
+[![시연 영상 보러가기](<img width="2206" height="1226" alt="image" src="https://github.com/user-attachments/assets/a8cb8547-1d3f-44f1-993e-23d8175d1c9a" />)](https://youtu.be/hfaouPVj6ac)
+
+---
+
+## Links
+~~
+
+--
 
 ## Team Members  
 
