@@ -1,10 +1,10 @@
-# GOYO | An AI-Based Active Noise Control System for Smart Home Environments
+# GOYO: An AI-Based Active Noise Control System for Smart Home Environments
 
-<img width="1848" height="1070" alt="image" src="https://github.com/user-attachments/assets/d73471c7-87f0-409c-833b-1c055f6ad31c" />
+<img width="1478" height="856" alt="image" src="https://github.com/user-attachments/assets/d73471c7-87f0-409c-833b-1c055f6ad31c" />
 
 ---
 
-## Proposal
+## 💁🏻‍♂️ Proposal
 
 This project proposes an AI-based active noise control system for smart home environments requiring sustained concentration, such as studying or remote working. The system addresses continuous low-frequency noise from household appliances like air conditioners and refrigerators that gradually reduce user focus.
 
@@ -14,12 +14,12 @@ This research demonstrates how a home-wide IoT sensing network with edge AI proc
 
 ---
 
-## System Architecture
+## ⚙️ System Architecture
 ![GOYO System Architecture](./Documents/System_Architecture.png)
 
 ---
 
-## Video
+## 📹 Video
 Click below image to watch our demo video
 
 <a href="https://youtu.be/hfaouPVj6ac">
@@ -28,20 +28,20 @@ Click below image to watch our demo video
 
 ---
 
-## Links
+## 🔗 Links
 
 
-Tech Blog: [GOYO System Blog](http://bit.ly/4aBjRQY)
+[GOYO | Tech Blog](http://bit.ly/4aBjRQY)
 
-PDF: [GOYO System Documentation](./Documents/GOYO.pdf)
+[GOYO | System Documentation - PDF](./Documents/GOYO.pdf)
 
-LaTeX: [GOYO System Documentation](./Documents/GOYO.tex)
+[GOYO | System Documentation - LaTeX](./Documents/GOYO.tex)
 
-PPT: [GOYO System Presentation](./~~)
+[GOYO | PPT](./~~최종본업로드!) 
 
 ---
 
-## Team Members  
+## 👨🏻‍💻 Team Members  
 
 | Name | Organization | Email |
 |------|---------------|-------|
