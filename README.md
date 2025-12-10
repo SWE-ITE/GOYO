@@ -1,5 +1,4 @@
-# GOYO  
-### An AI-Based Active Noise Control System for Smart Home Environments
+# GOYO | An AI-Based Active Noise Control System for Smart Home Environments
 
 Tech Blog: [[GOYO System Blog](http://bit.ly/4aBjRQY)
 
@@ -28,9 +27,10 @@ This research demonstrates how a home-wide IoT sensing network with edge AI proc
 
 ## Video
 Click below image to watch our demo video
+
 [![시연 영상 보러가기](https://img.youtube.com/vi/hfaouPVj6ac/0.jpg)](https://youtu.be/hfaouPVj6ac)
 
---
+---
 
 ## Team Members  
 
