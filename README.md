@@ -22,8 +22,8 @@ This research demonstrates how a home-wide IoT sensing network with edge AI proc
 ## 📹 Video
 **Click below image to watch our demo video**
 
-<a href="https://www.youtube.com/watch?v=rNHoUtuBcJs">
-  <img src="https://img.youtube.com/vi/rNHoUtuBcJs/maxresdefault.jpg" alt="시연 영상 보러가기" width="100%">
+<a href="https://www.youtube.com/watch?v=rNHoUtuBcJs&t=3s">
+  <img src="https://img.youtube.com/vi/rNHoUtuBcJs&t=3s/maxresdefault.jpg" alt="시연 영상 보러가기" width="100%">
 </a>
 
 ---
