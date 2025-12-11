@@ -22,8 +22,6 @@ By combining appliance-level acoustic intelligence with user-centered ANC, the s
 ## 📹 Video
 **Click below image to watch our demo video**
 
-https://youtu.be/rNHoUtuBcJs?si=FzkZGd-h0t_5-Tba
-
 <a href="https://www.youtube.com/watch?v=rNHoUtuBcJs">
   <img src="https://img.youtube.com/vi/rNHoUtuBcJs/maxresdefault.jpg" alt="시연 영상 보러가기" width="100%">
 </a>
