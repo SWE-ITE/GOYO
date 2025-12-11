@@ -6,11 +6,11 @@
 
 ## 💁🏻‍♂️ Proposal
 
-This project proposes an AI-based active noise control system for smart home environments requiring sustained concentration, such as studying or remote working. The system addresses continuous low-frequency noise from household appliances like air conditioners and refrigerators that gradually reduce user focus.
+This project proposes GOYO, an AI-based spatial active noise control (ANC) system designed for IoT-enabled smart homes. Modern living spaces expose users to continuous low-frequency noise from appliances such as air conditioners and refrigerators, which gradually reduces focus and comfort during studying or remote working.
 
-The system assumes a fully connected IoT home where each major appliance is equipped with an edge AI model that classifies noise signatures in real time and transmits the analyzed data to an ANC module. The core interface is a smart chair equipped with near-ear microphones and speakers that deliver localized active noise cancellation directly at the user's ears. Using classified noise information from distributed IoT appliances, the ANC module generates phase-inverted control signals through the chair's speakers to cancel unwanted sounds in real time.
+In the proposed system, each household appliance is equipped with a reference microphone and an on-device AI model that classifies its noise characteristics and broadcasts them over the home IoT network. GOYO, positioned near the user, fuses these distributed noise signatures with the sound captured by its near-ear microphones to generate localized phase-inverted control signals through its speakers.
 
-This research demonstrates how a home-wide IoT sensing network with edge AI processing combined with localized noise control can enhance concentration and reduce auditory fatigue in everyday smart home environments.
+By combining appliance-level acoustic intelligence with user-centered ANC, the system enables effective, real-time suppression of household noise without isolating the user. This proposal demonstrates the potential of an integrated spatial noise management framework to enhance concentration and auditory comfort in everyday smart home environments.
 
 ---
 
