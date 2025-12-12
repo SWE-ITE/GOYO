@@ -37,9 +37,9 @@ By combining appliance-level acoustic intelligence with user-centered ANC, the s
 
 [GOYO | System Documentation - LaTeX](./Documents/GOYO.tex)
 
-[GOYO | Presentation Slides - pptx](./Documents/GOYO_presentation.pptx)
+[GOYO | Presentation Slides - PPTX](./Documents/GOYO_presentation.pptx)
 
-[GOYO | Presentation Slides - pdf](./Documents/GOYO_presentation.pdf)
+[GOYO | Presentation Slides - PDF](./Documents/GOYO_presentation.pdf)
 
 ---
 
